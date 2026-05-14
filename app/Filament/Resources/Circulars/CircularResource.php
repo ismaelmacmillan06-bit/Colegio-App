@@ -44,10 +44,13 @@ class CircularResource extends Resource
                 ->label('Visible en el sitio')
                 ->default(true),
 
-            FileUpload::make('archivo_pdf')
-                ->label('Archivo PDF')
-                ->acceptedFileTypes(['application/pdf'])
-                ->directory('circulares')
+            FileUpload::make('imagen')
+                ->label('Imagen')
+                ->image()
+                ->disk('public')
+                ->directory('galeria')
+                ->required()
+                ->maxSize(2048)
                 ->columnSpanFull(),
         ]);
     }

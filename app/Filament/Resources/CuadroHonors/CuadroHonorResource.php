@@ -55,11 +55,13 @@ class CuadroHonorResource extends Resource
                 ->rows(3)
                 ->columnSpanFull(),
 
-            FileUpload::make('foto')
-                ->label('Foto del Alumno')
+            FileUpload::make('imagen')
+                ->label('Imagen')
                 ->image()
-                ->directory('cuadro-honor')
-                ->maxSize(1024)
+                ->disk('public')
+                ->directory('galeria')
+                ->required()
+                ->maxSize(2048)
                 ->columnSpanFull(),
 
             Toggle::make('activo')

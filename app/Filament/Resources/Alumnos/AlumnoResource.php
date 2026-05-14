@@ -46,11 +46,14 @@ class AlumnoResource extends Resource
                         ->maxLength(255)
                         ->placeholder('Se asigna al registrar la credencial'),
 
-                    FileUpload::make('foto')
-                        ->label('Foto del Alumno')
+                    FileUpload::make('imagen')
+                        ->label('Imagen')
                         ->image()
-                        ->directory('alumnos')
-                        ->maxSize(1024),
+                        ->disk('public')
+                        ->directory('galeria')
+                        ->required()
+                        ->maxSize(2048)
+                        ->columnSpanFull(),
 
                     Toggle::make('activo')
                         ->label('Activo')

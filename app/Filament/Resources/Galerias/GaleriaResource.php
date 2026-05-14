@@ -35,12 +35,13 @@ class GaleriaResource extends Resource
                 ->columnSpanFull(),
 
             FileUpload::make('imagen')
-                ->label('Imagen')
-                ->image()
-                ->directory('galeria')
-                ->required()
-                ->maxSize(2048)
-                ->columnSpanFull(),
+            ->label('Imagen')
+            ->image()
+            ->disk('public')
+            ->directory('galeria')
+            ->required()
+             ->maxSize(2048)
+             ->columnSpanFull(),
 
             TextInput::make('orden')
                 ->label('Orden')
