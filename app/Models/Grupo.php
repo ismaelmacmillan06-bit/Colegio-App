@@ -10,6 +10,7 @@ class Grupo extends Model
 
     protected $fillable = [
         'grado_id',
+        'docente_id',
         'grupo',
         'maestro',
         'total_alumnos',
@@ -23,6 +24,11 @@ class Grupo extends Model
     public function grado()
     {
         return $this->belongsTo(Grado::class);
+    }
+
+    public function docente()
+    {
+        return $this->belongsTo(Docente::class);
     }
 
     public function alumnos()
