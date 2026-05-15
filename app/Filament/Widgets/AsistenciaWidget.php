@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Asistencia;
+use App\Models\AsistenciaDocente;
 use App\Models\Grupo;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Carbon;
@@ -16,7 +17,7 @@ class AsistenciaWidget extends Widget
     protected function getViewData(): array
     {
         $hoy = Carbon::today();
-        $grupos = Grupo::with(['grado', 'alumnos'])->where('activo', true)->get();
+        $grupos = Grupo::with(['grado', 'alumnos', 'docente'])->where('activo', true)->get();
 
         $datos = $grupos->map(function ($grupo) use ($hoy) {
             $totalAlumnos = $grupo->alumnos->count();
@@ -29,13 +30,23 @@ class AsistenciaWidget extends Widget
                 ? round(($presentes / $totalAlumnos) * 100)
                 : 0;
 
+            $maestroLlego = false;
+            if ($grupo->docente) {
+                $maestroLlego = AsistenciaDocente::where('docente_id', $grupo->docente->id)
+                    ->where('fecha', $hoy)
+                    ->exists();
+            }
+
             return [
                 'grupo' => $grupo->grado->nombre . $grupo->grupo,
                 'nivel' => $grupo->grado->nivel,
-                'maestro' => $grupo->maestro ?? 'Sin asignar',
+                'maestro' => $grupo->docente
+                    ? $grupo->docente->nombre . ' ' . $grupo->docente->apellidos
+                    : ($grupo->maestro ?? 'Sin asignar'),
                 'total' => $totalAlumnos,
                 'presentes' => $presentes,
                 'porcentaje' => $porcentaje,
+                'maestro_llego' => $maestroLlego,
             ];
         });
 

@@ -15,11 +15,16 @@
             <div style="font-weight: 600; color: #111827; font-size: 0.95rem;">
                 {{ $grupo['grupo'] }} {{ $grupo['nivel'] }}
             </div>
-            <div style="color: #9ca3af; font-size: 0.8rem; margin-bottom: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 6px; color: #6b7280; font-size: 0.8rem; margin-bottom: 0.75rem;">
+                @if($grupo['maestro_llego'])
+                    <span style="color: #16a34a; font-size: 1rem;">✅</span>
+                @else
+                    <span style="color: #dc2626; font-size: 1rem;">❌</span>
+                @endif
                 {{ $grupo['maestro'] }}
             </div>
             <div style="display: inline-block; background: #dbeafe; color: #1e40af; font-size: 0.75rem; padding: 3px 12px; border-radius: 99px; margin-bottom: 0.75rem;">
-                Asistencia: {{ $grupo['presentes'] }}
+                Asistencia: {{ $grupo['presentes'] }}/{{ $grupo['total'] }}
             </div>
             <div style="width: 100%; background: #e5e7eb; border-radius: 99px; height: 6px;">
                 <div style="background: #2563eb; height: 6px; border-radius: 99px; width: {{ $grupo['porcentaje'] }}%;"></div>
