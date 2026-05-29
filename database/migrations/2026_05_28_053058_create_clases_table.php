@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
 {
-    Schema::create('docentes', function (Blueprint $table) {
+    Schema::create('clases', function (Blueprint $table) {
         $table->id();
-        $table->string('nombre');
-        $table->string('apellidos');
-        $table->string('materia')->nullable();
-        $table->string('foto')->nullable();
-        $table->string('telefono')->nullable();
-        $table->string('nfc_uid')->unique()->nullable();
+        $table->string('nombre'); // Ej: 1°A Primaria
+        $table->string('nivel')->nullable(); // Primaria, Secundaria, Preescolar
+        $table->integer('capacidad')->default(30);
         $table->boolean('activo')->default(true);
         $table->timestamps();
     });
@@ -29,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('docentes');
+        Schema::dropIfExists('clases');
     }
 };

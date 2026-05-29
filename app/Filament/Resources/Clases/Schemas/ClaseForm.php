@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Resources\Grupos\Schemas;
+namespace App\Filament\Resources\Clases\Schemas;
 
 use Filament\Schemas\Schema;
 
-class GrupoForm
+class ClaseForm
 {
     public static function configure(Schema $schema): Schema
     {

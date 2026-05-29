@@ -20,6 +20,10 @@ class CircularResource extends Resource
     protected static ?string $navigationLabel = 'Circulares';
     protected static ?string $modelLabel = 'Circular';
     protected static ?int $navigationSort = 1;
+    public static function getNavigationGroup(): ?string
+{
+    return 'Página Web';
+}
 
     public static function form(Schema $schema): Schema
     {
@@ -44,13 +48,11 @@ class CircularResource extends Resource
                 ->label('Visible en el sitio')
                 ->default(true),
 
-            FileUpload::make('imagen')
-                ->label('Imagen')
-                ->image()
+            FileUpload::make('archivo_pdf')
+                ->label('Archivo PDF')
+                ->acceptedFileTypes(['application/pdf'])
                 ->disk('public')
-                ->directory('galeria')
-                ->required()
-                ->maxSize(2048)
+                ->directory('circulares')
                 ->columnSpanFull(),
         ]);
     }

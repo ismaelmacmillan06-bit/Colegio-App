@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\Grupos\Pages;
+namespace App\Filament\Resources\Clases\Pages;
 
-use App\Filament\Resources\Grupos\GrupoResource;
+use App\Filament\Resources\Clases\ClaseResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
-class ListGrupos extends ListRecords
+class ListClases extends ListRecords
 {
-    protected static string $resource = GrupoResource::class;
+    protected static string $resource = ClaseResource::class;
 
     protected function getHeaderActions(): array
     {

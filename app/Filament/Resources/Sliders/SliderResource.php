@@ -19,6 +19,10 @@ class SliderResource extends Resource
     protected static ?string $navigationLabel = 'Sliders';
     protected static ?string $modelLabel = 'Slider';
     protected static ?int $navigationSort = 2;
+    public static function getNavigationGroup(): ?string
+{
+    return 'Página Web';
+}
 
     public static function form(Schema $schema): Schema
     {

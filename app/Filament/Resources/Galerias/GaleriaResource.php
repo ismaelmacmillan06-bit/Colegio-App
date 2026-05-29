@@ -19,6 +19,10 @@ class GaleriaResource extends Resource
     protected static ?string $navigationLabel = 'Galería';
     protected static ?string $modelLabel = 'Foto';
     protected static ?int $navigationSort = 3;
+    public static function getNavigationGroup(): ?string
+{
+    return 'Página Web';
+}
 
     public static function form(Schema $schema): Schema
     {

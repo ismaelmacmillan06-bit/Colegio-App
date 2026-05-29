@@ -15,20 +15,22 @@
             position: fixed; top: 0; width: 100%; z-index: 1000;
             background: #00004E; padding: 0 2rem;
             display: flex; align-items: center; justify-content: space-between;
-            height: 70px; box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+            height: 85px; box-shadow: 0 2px 20px rgba(0,0,0,0.3);
         }
         .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-        .nav-logo img { height: 50px; }
-        .nav-logo span { color: white; font-size: 0.85rem; font-weight: 500; line-height: 1.3; max-width: 180px; }
+        .nav-logo img { height: 60px; }
+        .nav-logo span { color: white; font-size: 0.9rem; font-weight: 500; line-height: 1.3; max-width: 180px; }
         .nav-links { display: flex; gap: 2rem; list-style: none; }
         .nav-links a {
             color: rgba(255,255,255,0.85); text-decoration: none;
-            font-size: 0.9rem; font-weight: 500; transition: color 0.2s;
+            font-size: 0.92rem; font-weight: 500; transition: color 0.2s;
+            display: flex; align-items: center; gap: 6px;
         }
+        .nav-links a i { font-size: 1rem; }
         .nav-links a:hover { color: #6ab04c; }
 
         /* SLIDER */
-        .slider { margin-top: 70px; position: relative; height: 90vh; overflow: hidden; background: #00004E; }
+        .slider { margin-top: 85px; position: relative; height: 63vh; overflow: hidden; background: #00004E; }
         .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; }
         .slide.active { opacity: 1; }
         .slide img { width: 100%; height: 100%; object-fit: cover; }
@@ -72,10 +74,18 @@
         /* CIRCULARES */
         .circulares-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
         .circular-card {
-            background: white; border-radius: 12px; padding: 1.5rem;
-            border-left: 4px solid #6ab04c; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            display: flex; flex-direction: column; gap: 0.75rem;
-        }
+    background: white; border-radius: 12px; padding: 1.5rem;
+    border-left: 4px solid #6ab04c; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    display: flex; flex-direction: column; gap: 0.75rem;
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    cursor: pointer;
+}
+.circular-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(0,0,78,0.15);
+    border-left-color: #00004E;
+}
+        
         .circular-fecha { color: #6ab04c; font-size: 0.8rem; font-weight: 600; }
         .circular-titulo { color: #00004E; font-size: 1rem; font-weight: 600; }
         .circular-desc { color: #666; font-size: 0.85rem; line-height: 1.6; flex: 1; }
@@ -150,17 +160,17 @@
 
 <!-- NAVBAR -->
 <nav>
-    <a href="{{ route('inicio') }}" class="nav-logo">
+    <a href="/admin" class="nav-logo">
         <img src="{{ asset('images/logoimacf.png') }}" alt="IMA">
         <span>Centro Cultural y Pedagógico<br>Ignacio Manuel Altamirano</span>
     </a>
     <ul class="nav-links">
-        <li><a href="{{ route('inicio') }}">Inicio</a></li>
-        <li><a href="{{ route('circulares') }}">Circulares</a></li>
-        <li><a href="{{ route('galeria') }}">Galería</a></li>
-        <li><a href="{{ route('menu') }}">Menú Cafetería</a></li>
-        <li><a href="#contacto">Contacto</a></li>
-    </ul>
+    <li><a href="{{ route('inicio') }}"><i class="fas fa-home"></i> Inicio</a></li>
+    <li><a href="{{ route('circulares') }}"><i class="fas fa-file-alt"></i> Circulares</a></li>
+    <li><a href="{{ route('galeria') }}"><i class="fas fa-images"></i> Galería</a></li>
+    <li><a href="{{ route('menu') }}"><i class="fas fa-utensils"></i> Menú Cafetería</a></li>
+    <li><a href="#contacto"><i class="fas fa-envelope"></i> Contacto</a></li>
+</ul>
 </nav>
 
 <!-- SLIDER -->
@@ -204,8 +214,8 @@
         </div>
         <div class="card">
             <div class="card-icon"><i class="fas fa-palette"></i></div>
-            <h3>Arte y Pintura</h3>
-            <p>Expresión artística y creatividad a través de técnicas de dibujo y pintura.</p>
+            <h3>Cluib de tareas</h3>
+            <p>Espacio para que nuestros estudiantes realicen tareas acompañados de maestros.</p>
         </div>
         <div class="card">
             <div class="card-icon"><i class="fas fa-music"></i></div>

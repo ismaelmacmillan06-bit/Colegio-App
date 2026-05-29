@@ -3,8 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Alumno;
-use App\Models\Grupo;
-use App\Models\Grado;
+use App\Models\Clase;
 
 class AlumnosImport
 {
@@ -18,33 +17,31 @@ class AlumnosImport
         $encabezado = fgetcsv($archivo);
 
         while (($fila = fgetcsv($archivo)) !== false) {
-            if (count($fila) < 6) continue;
+            if (count($fila) < 3) continue;
 
-            [$nombre, $apellidos, $grado, $grupo, $telefono_padre, $telefono_madre, $nombre_padre, $nombre_madre] = array_pad($fila, 8, null);
+            [$nombre, $apellidos, $clase, $telefono_padre, $correo_padre, $nombre_padre,
+             $telefono_madre, $correo_madre, $nombre_madre,
+             $telefono_tutor, $correo_tutor, $nombre_tutor] = array_pad($fila, 12, null);
 
-            $gradoModel = Grado::where('nombre', trim($grado))->first();
-            if (!$gradoModel) {
-                $this->errores[] = "Grado '{$grado}' no encontrado para {$nombre} {$apellidos}";
-                continue;
-            }
-
-            $grupoModel = Grupo::where('grado_id', $gradoModel->id)
-                ->where('grupo', trim($grupo))
-                ->first();
-
-            if (!$grupoModel) {
-                $this->errores[] = "Grupo '{$grupo}' no encontrado en grado '{$grado}' para {$nombre} {$apellidos}";
+            $claseModel = Clase::where('nombre', trim($clase))->first();
+            if (!$claseModel) {
+                $this->errores[] = "Clase '{$clase}' no encontrada para {$nombre} {$apellidos}";
                 continue;
             }
 
             Alumno::create([
                 'nombre' => trim($nombre),
                 'apellidos' => trim($apellidos),
-                'grupo_id' => $grupoModel->id,
-                'telefono_padre' => trim($telefono_padre),
-                'telefono_madre' => trim($telefono_madre),
+                'clase_id' => $claseModel->id,
                 'nombre_padre' => trim($nombre_padre),
+                'telefono_padre' => trim($telefono_padre),
+                'correo_padre' => trim($correo_padre),
                 'nombre_madre' => trim($nombre_madre),
+                'telefono_madre' => trim($telefono_madre),
+                'correo_madre' => trim($correo_madre),
+                'nombre_tutor' => trim($nombre_tutor),
+                'telefono_tutor' => trim($telefono_tutor),
+                'correo_tutor' => trim($correo_tutor),
                 'activo' => true,
             ]);
 

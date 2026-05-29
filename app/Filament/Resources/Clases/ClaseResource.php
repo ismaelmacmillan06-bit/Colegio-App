@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\Grados;
+namespace App\Filament\Resources\Clases;
 
-use App\Filament\Resources\Grados\Pages;
-use App\Models\Grado;
+use App\Filament\Resources\Clases\Pages;
+use App\Models\Clase;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
@@ -12,30 +12,39 @@ use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
-class GradoResource extends Resource
+class ClaseResource extends Resource
 {
-    protected static ?string $model = Grado::class;
-    protected static ?string $navigationLabel = 'Grados';
-    protected static ?string $modelLabel = 'Grado';
-    
+    protected static ?string $model = Clase::class;
+    protected static ?string $navigationLabel = 'Clases';
+    protected static ?string $modelLabel = 'Clase';
+    protected static ?int $navigationSort = 1;
+    public static function getNavigationGroup(): ?string
+{
+    return 'Escuela';
+}
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
             TextInput::make('nombre')
-                ->label('Nombre del Grado')
+                ->label('Nombre de la Clase')
                 ->required()
-                ->placeholder('Ej: 1°, 2°, 3°')
-                ->maxLength(50),
+                ->placeholder('Ej: 1°A Primaria, Kinder 3, 1° Secundaria A')
+                ->maxLength(255)
+                ->columnSpanFull(),
 
             Select::make('nivel')
                 ->label('Nivel')
-                ->required()
                 ->options([
                     'Preescolar' => 'Preescolar',
                     'Primaria' => 'Primaria',
                     'Secundaria' => 'Secundaria',
                 ]),
+
+            TextInput::make('capacidad')
+                ->label('Capacidad')
+                ->numeric()
+                ->default(30),
 
             Toggle::make('activo')
                 ->label('Activo')
@@ -47,13 +56,20 @@ class GradoResource extends Resource
     {
         return $table->columns([
             Tables\Columns\TextColumn::make('nombre')
-                ->label('Grado')
-                ->sortable()
-                ->searchable(),
+                ->label('Clase')
+                ->searchable()
+                ->sortable(),
 
             Tables\Columns\TextColumn::make('nivel')
                 ->label('Nivel')
                 ->sortable(),
+
+            Tables\Columns\TextColumn::make('capacidad')
+                ->label('Capacidad'),
+
+            Tables\Columns\TextColumn::make('alumnos_count')
+                ->label('Alumnos')
+                ->counts('alumnos'),
 
             Tables\Columns\IconColumn::make('activo')
                 ->label('Activo')
@@ -73,9 +89,9 @@ class GradoResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListGrados::route('/'),
-            'create' => Pages\CreateGrado::route('/create'),
-            'edit' => Pages\EditGrado::route('/{record}/edit'),
+            'index' => Pages\ListClases::route('/'),
+            'create' => Pages\CreateClase::route('/create'),
+            'edit' => Pages\EditClase::route('/{record}/edit'),
         ];
     }
 }

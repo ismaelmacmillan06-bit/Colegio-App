@@ -18,7 +18,10 @@ class MenuCafeteriaResource extends Resource
     protected static ?string $navigationLabel = 'Menú Cafetería';
     protected static ?string $modelLabel = 'Menú del Día';
     protected static ?int $navigationSort = 5;
-
+    public static function getNavigationGroup(): ?string
+{
+    return 'Página Web';
+}
     public static function form(Schema $schema): Schema
     {
         return $schema->components([

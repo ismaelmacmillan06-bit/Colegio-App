@@ -19,6 +19,10 @@ class CuadroHonorResource extends Resource
     protected static ?string $navigationLabel = 'Cuadro de Honor';
     protected static ?string $modelLabel = 'Alumno Destacado';
     protected static ?int $navigationSort = 4;
+    public static function getNavigationGroup(): ?string
+{
+    return 'Página Web';
+}
 
     public static function form(Schema $schema): Schema
     {

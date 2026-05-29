@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\Grados\Tables;
+namespace App\Filament\Resources\Clases\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Table;
 
-class GradosTable
+class ClasesTable
 {
     public static function configure(Table $table): Table
     {

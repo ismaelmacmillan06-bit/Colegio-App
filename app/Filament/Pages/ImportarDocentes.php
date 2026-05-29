@@ -8,7 +8,10 @@ class ImportarDocentes extends Page
 {
     protected string $view = 'filament.pages.importar-docentes';
     protected static ?string $navigationLabel = 'Importar Docentes';
-    
-    protected static ?int $navigationSort = 11;
     protected static ?string $title = 'Importación Masiva de Docentes';
+    protected static ?int $navigationSort = 11;
+    public static function getNavigationGroup(): ?string
+{
+    return 'Escuela';
+}
 }

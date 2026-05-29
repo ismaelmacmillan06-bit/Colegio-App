@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Imports\AlumnosImport;
 use App\Imports\DocentesImport;
-use App\Imports\GruposImport;
 use Illuminate\Http\Request;
 
 class ImportacionController extends Controller
@@ -14,18 +13,13 @@ class ImportacionController extends Controller
         $plantillas = [
             'alumnos' => [
                 'nombre' => 'plantilla_alumnos.csv',
-                'encabezado' => ['nombre', 'apellidos', 'grado', 'grupo', 'telefono_padre', 'telefono_madre', 'nombre_padre', 'nombre_madre'],
-                'ejemplo' => ['Juan', 'Pérez García', '1°', 'A', '5512345678', '5587654321', 'Carlos Pérez', 'María García'],
+                'encabezado' => ['nombre', 'apellidos', 'clase', 'telefono_padre', 'correo_padre', 'nombre_padre', 'telefono_madre', 'correo_madre', 'nombre_madre', 'telefono_tutor', 'correo_tutor', 'nombre_tutor'],
+                'ejemplo' => ['Juan', 'Pérez García', '1°A Primaria', '5512345678', 'papa@correo.com', 'Carlos Pérez', '5587654321', 'mama@correo.com', 'María García', '5598765432', 'tutor@correo.com', 'Roberto García'],
             ],
             'docentes' => [
                 'nombre' => 'plantilla_docentes.csv',
-                'encabezado' => ['nombre', 'apellidos', 'materia', 'telefono'],
-                'ejemplo' => ['Ana', 'González López', '1ro A Primaria', '5598765432'],
-            ],
-            'grupos' => [
-                'nombre' => 'plantilla_grupos.csv',
-                'encabezado' => ['grado', 'grupo', 'docente_nombre_completo', 'total_alumnos'],
-                'ejemplo' => ['1°', 'A', 'Ana González López', '30'],
+                'encabezado' => ['nombre', 'apellidos', 'clase', 'materia', 'telefono'],
+                'ejemplo' => ['Ana', 'González López', '1°A Primaria', 'Matemáticas', '5598765432'],
             ],
         ];
 
@@ -35,7 +29,7 @@ class ImportacionController extends Controller
 
         $plantilla = $plantillas[$tipo];
 
-        $response = response()->streamDownload(function () use ($plantilla) {
+        return response()->streamDownload(function () use ($plantilla) {
             $archivo = fopen('php://output', 'w');
             fputcsv($archivo, $plantilla['encabezado']);
             fputcsv($archivo, $plantilla['ejemplo']);
@@ -43,8 +37,6 @@ class ImportacionController extends Controller
         }, $plantilla['nombre'], [
             'Content-Type' => 'text/csv',
         ]);
-
-        return $response;
     }
 
     public function importar(Request $request, $tipo)
@@ -59,7 +51,6 @@ class ImportacionController extends Controller
         $importadores = [
             'alumnos' => AlumnosImport::class,
             'docentes' => DocentesImport::class,
-            'grupos' => GruposImport::class,
         ];
 
         if (!isset($importadores[$tipo])) {

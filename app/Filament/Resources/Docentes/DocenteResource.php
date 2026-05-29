@@ -4,9 +4,11 @@ namespace App\Filament\Resources\Docentes;
 
 use App\Filament\Resources\Docentes\Pages;
 use App\Models\Docente;
+use App\Models\Clase;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables;
@@ -17,7 +19,11 @@ class DocenteResource extends Resource
     protected static ?string $model = Docente::class;
     protected static ?string $navigationLabel = 'Docentes';
     protected static ?string $modelLabel = 'Docente';
-    protected static ?int $navigationSort = 9;
+    protected static ?int $navigationSort = 3;
+    public static function getNavigationGroup(): ?string
+{
+    return 'Escuela';
+}
 
     public static function form(Schema $schema): Schema
     {
@@ -32,9 +38,28 @@ class DocenteResource extends Resource
                 ->required()
                 ->maxLength(255),
 
+            Select::make('tipo')
+                ->label('Tipo de Docente')
+                ->required()
+                ->options([
+                    'titular' => 'Titular de Clase',
+                    'extracurricular' => 'Extracurricular',
+                    'directivo' => 'Directivo',
+                ])
+                ->default('titular')
+                ->live(),
+
+            Select::make('clase_id')
+                ->label('Clase Asignada')
+                ->options(Clase::where('activo', true)->pluck('nombre', 'id'))
+                ->searchable()
+                ->nullable()
+                ->visible(fn($get) => $get('tipo') === 'titular'),
+
             TextInput::make('materia')
-                ->label('Materia')
-                ->maxLength(255),
+                ->label('Materia / Cargo')
+                ->maxLength(255)
+                ->placeholder('Ej: Inglés, Director General, Danza'),
 
             TextInput::make('telefono')
                 ->label('Teléfono')
@@ -78,8 +103,22 @@ class DocenteResource extends Resource
                 ->searchable()
                 ->sortable(),
 
+            Tables\Columns\TextColumn::make('tipo')
+                ->label('Tipo')
+                ->badge()
+                ->color(fn(string $state): string => match($state) {
+                    'titular' => 'success',
+                    'extracurricular' => 'warning',
+                    'directivo' => 'info',
+                }),
+
+            Tables\Columns\TextColumn::make('clase.nombre')
+                ->label('Clase')
+                ->sortable()
+                ->placeholder('Sin clase'),
+
             Tables\Columns\TextColumn::make('materia')
-                ->label('Materia')
+                ->label('Materia / Cargo')
                 ->searchable(),
 
             Tables\Columns\TextColumn::make('nfc_uid')

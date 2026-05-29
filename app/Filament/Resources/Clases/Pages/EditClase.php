@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\Grupos\Pages;
+namespace App\Filament\Resources\Clases\Pages;
 
-use App\Filament\Resources\Grupos\GrupoResource;
+use App\Filament\Resources\Clases\ClaseResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
-class EditGrupo extends EditRecord
+class EditClase extends EditRecord
 {
-    protected static string $resource = GrupoResource::class;
+    protected static string $resource = ClaseResource::class;
 
     protected function getHeaderActions(): array
     {

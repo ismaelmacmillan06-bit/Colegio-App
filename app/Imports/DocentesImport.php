@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Docente;
+use App\Models\Clase;
 
 class DocentesImport
 {
@@ -18,11 +19,21 @@ class DocentesImport
         while (($fila = fgetcsv($archivo)) !== false) {
             if (count($fila) < 2) continue;
 
-            [$nombre, $apellidos, $materia, $telefono] = array_pad($fila, 4, null);
+            [$nombre, $apellidos, $clase, $materia, $telefono] = array_pad($fila, 5, null);
+
+            $claseModel = null;
+            if ($clase) {
+                $claseModel = Clase::where('nombre', trim($clase))->first();
+                if (!$claseModel) {
+                    $this->errores[] = "Clase '{$clase}' no encontrada para {$nombre} {$apellidos}";
+                    continue;
+                }
+            }
 
             Docente::create([
                 'nombre' => trim($nombre),
                 'apellidos' => trim($apellidos),
+                'clase_id' => $claseModel?->id,
                 'materia' => trim($materia),
                 'telefono' => trim($telefono),
                 'activo' => true,

@@ -9,31 +9,28 @@ class Docente extends Model
     protected $table = 'docentes';
 
     protected $fillable = [
-        'nombre',
-        'apellidos',
-        'materia',
-        'foto',
-        'telefono',
-        'nfc_uid',
-        'activo',
-    ];
+    'clase_id',
+    'tipo',
+    'nombre',
+    'apellidos',
+    'materia',
+    'foto',
+    'telefono',
+    'nfc_uid',
+    'activo',
+];
 
     protected $casts = [
         'activo' => 'boolean',
     ];
 
-    public function grupos()
+    public function clase()
     {
-        return $this->hasMany(Grupo::class);
+        return $this->belongsTo(Clase::class);
     }
 
     public function asistencias()
     {
         return $this->hasMany(AsistenciaDocente::class);
-    }
-
-    public function getNombreCompletoAttribute()
-    {
-        return $this->nombre . ' ' . $this->apellidos;
     }
 }

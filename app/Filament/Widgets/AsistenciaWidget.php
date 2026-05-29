@@ -4,7 +4,9 @@ namespace App\Filament\Widgets;
 
 use App\Models\Asistencia;
 use App\Models\AsistenciaDocente;
-use App\Models\Grupo;
+use App\Models\Clase;
+use App\Models\Docente;
+use App\Models\Alumno;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Carbon;
 
@@ -17,12 +19,13 @@ class AsistenciaWidget extends Widget
     protected function getViewData(): array
     {
         $hoy = Carbon::today();
-        $grupos = Grupo::with(['grado', 'alumnos', 'docente'])->where('activo', true)->get();
 
-        $datos = $grupos->map(function ($grupo) use ($hoy) {
-            $totalAlumnos = $grupo->alumnos->count();
+        $clases = Clase::with(['alumnos', 'docentes'])->where('activo', true)->get();
+
+        $datosClases = $clases->map(function ($clase) use ($hoy) {
+            $totalAlumnos = $clase->alumnos->count();
             $presentes = Asistencia::where('fecha', $hoy)
-                ->whereIn('alumno_id', $grupo->alumnos->pluck('id'))
+                ->whereIn('alumno_id', $clase->alumnos->pluck('id'))
                 ->where('estado', 'presente')
                 ->count();
 
@@ -30,29 +33,73 @@ class AsistenciaWidget extends Widget
                 ? round(($presentes / $totalAlumnos) * 100)
                 : 0;
 
+            $docente = $clase->docentes->where('tipo', 'titular')->first();
             $maestroLlego = false;
-            if ($grupo->docente) {
-                $maestroLlego = AsistenciaDocente::where('docente_id', $grupo->docente->id)
+            $ultimoAcceso = null;
+
+            if ($docente) {
+                $asistenciaDocente = AsistenciaDocente::where('docente_id', $docente->id)
                     ->where('fecha', $hoy)
-                    ->exists();
+                    ->first();
+                $maestroLlego = $asistenciaDocente !== null;
+                $ultimoAcceso = $asistenciaDocente?->hora_entrada;
             }
 
             return [
-                'grupo' => $grupo->grado->nombre . $grupo->grupo,
-                'nivel' => $grupo->grado->nivel,
-                'maestro' => $grupo->docente
-                    ? $grupo->docente->nombre . ' ' . $grupo->docente->apellidos
-                    : ($grupo->maestro ?? 'Sin asignar'),
+                'id' => $clase->id,
+                'nombre' => $clase->nombre,
+                'nivel' => $clase->nivel,
+                'docente_nombre' => $docente ? $docente->nombre . ' ' . $docente->apellidos : 'Sin docente',
+                'docente_foto' => $docente?->foto,
                 'total' => $totalAlumnos,
                 'presentes' => $presentes,
                 'porcentaje' => $porcentaje,
                 'maestro_llego' => $maestroLlego,
+                'ultimo_acceso' => $ultimoAcceso,
             ];
         });
 
+        $directivos = Docente::where('tipo', 'directivo')->where('activo', true)->get()->map(function ($d) use ($hoy) {
+            $llego = AsistenciaDocente::where('docente_id', $d->id)->where('fecha', $hoy)->exists();
+            return [
+                'nombre' => $d->nombre . ' ' . $d->apellidos,
+                'cargo' => $d->materia ?? 'Directivo',
+                'foto' => $d->foto,
+                'llego' => $llego,
+            ];
+        });
+
+        $extracurriculares = Docente::where('tipo', 'extracurricular')->where('activo', true)->get()->map(function ($d) use ($hoy) {
+            $llego = AsistenciaDocente::where('docente_id', $d->id)->where('fecha', $hoy)->exists();
+            return [
+                'nombre' => $d->nombre . ' ' . $d->apellidos,
+                'materia' => $d->materia ?? 'Extracurricular',
+                'foto' => $d->foto,
+                'llego' => $llego,
+            ];
+        });
+
+        $totalAlumnos = Alumno::where('activo', true)->count();
+        $totalPresentes = Asistencia::where('fecha', $hoy)->where('estado', 'presente')->count();
+        $asistenciaGeneral = $totalAlumnos > 0 ? round(($totalPresentes / $totalAlumnos) * 100) : 0;
+
+        $alumnosPorNivel = Alumno::where('alumnos.activo', true)
+            ->join('clases', 'alumnos.clase_id', '=', 'clases.id')
+            ->selectRaw('clases.nivel, count(*) as total')
+            ->groupBy('clases.nivel')
+            ->pluck('total', 'nivel');
+
         return [
-            'grupos' => $datos,
+            'clases' => $datosClases,
+            'directivos' => $directivos,
+            'extracurriculares' => $extracurriculares,
             'fecha' => Carbon::today()->locale('es')->isoFormat('D [de] MMMM [de] YYYY'),
+            'total_alumnos' => $totalAlumnos,
+            'total_presentes' => $totalPresentes,
+            'asistencia_general' => $asistenciaGeneral,
+            'alumnos_por_nivel' => $alumnosPorNivel,
+            'total_directivos' => $directivos->count(),
+            'total_extracurriculares' => $extracurriculares->count(),
         ];
     }
 }

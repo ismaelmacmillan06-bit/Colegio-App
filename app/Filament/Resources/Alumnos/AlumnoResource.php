@@ -4,13 +4,14 @@ namespace App\Filament\Resources\Alumnos;
 
 use App\Filament\Resources\Alumnos\Pages;
 use App\Models\Alumno;
+use App\Models\Clase;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Section;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -19,7 +20,11 @@ class AlumnoResource extends Resource
     protected static ?string $model = Alumno::class;
     protected static ?string $navigationLabel = 'Alumnos';
     protected static ?string $modelLabel = 'Alumno';
-
+    protected static ?int $navigationSort = 2;
+    public static function getNavigationGroup(): ?string
+{
+    return 'Escuela';
+}
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -35,51 +40,76 @@ class AlumnoResource extends Resource
                         ->required()
                         ->maxLength(255),
 
-                    Select::make('grupo_id')
-                        ->label('Grupo')
+                    Select::make('clase_id')
+                        ->label('Clase')
                         ->required()
-                        ->relationship('grupo', 'grupo')
-                        ->preload(),
+                        ->options(Clase::where('activo', true)->pluck('nombre', 'id'))
+                        ->searchable(),
 
                     TextInput::make('nfc_uid')
                         ->label('UID Credencial NFC')
                         ->maxLength(255)
                         ->placeholder('Se asigna al registrar la credencial'),
 
-                    FileUpload::make('imagen')
-                        ->label('Imagen')
+                    FileUpload::make('foto')
+                        ->label('Foto del Alumno')
                         ->image()
                         ->disk('public')
-                        ->directory('galeria')
-                        ->required()
-                        ->maxSize(2048)
-                        ->columnSpanFull(),
+                        ->directory('alumnos')
+                        ->maxSize(1024),
 
                     Toggle::make('activo')
                         ->label('Activo')
                         ->default(true),
                 ])->columns(2),
 
-            Section::make('Datos de los Padres')
-                ->schema([
-                    TextInput::make('nombre_padre')
-                        ->label('Nombre del Padre')
-                        ->maxLength(255),
+            Section::make('Contactos')
+    ->schema([
+        // PADRE
+        TextInput::make('nombre_padre')
+            ->label('Nombre del Padre')
+            ->maxLength(255),
 
-                    TextInput::make('telefono_padre')
-                        ->label('Teléfono del Padre')
-                        ->tel()
-                        ->maxLength(20),
+        TextInput::make('telefono_padre')
+            ->label('Teléfono del Padre')
+            ->tel()
+            ->maxLength(20),
 
-                    TextInput::make('nombre_madre')
-                        ->label('Nombre de la Madre')
-                        ->maxLength(255),
+        TextInput::make('correo_padre')
+            ->label('Correo del Padre')
+            ->email()
+            ->maxLength(255),
 
-                    TextInput::make('telefono_madre')
-                        ->label('Teléfono de la Madre')
-                        ->tel()
-                        ->maxLength(20),
-                ])->columns(2),
+        // MADRE
+        TextInput::make('nombre_madre')
+            ->label('Nombre de la Madre')
+            ->maxLength(255),
+
+        TextInput::make('telefono_madre')
+            ->label('Teléfono de la Madre')
+            ->tel()
+            ->maxLength(20),
+
+        TextInput::make('correo_madre')
+            ->label('Correo de la Madre')
+            ->email()
+            ->maxLength(255),
+
+        // TUTOR
+        TextInput::make('nombre_tutor')
+            ->label('Nombre del Tutor')
+            ->maxLength(255),
+
+        TextInput::make('telefono_tutor')
+            ->label('Teléfono del Tutor')
+            ->tel()
+            ->maxLength(20),
+
+        TextInput::make('correo_tutor')
+            ->label('Correo del Tutor')
+            ->email()
+            ->maxLength(255),
+    ])->columns(3),
         ]);
     }
 
@@ -88,7 +118,8 @@ class AlumnoResource extends Resource
         return $table->columns([
             Tables\Columns\ImageColumn::make('foto')
                 ->label('Foto')
-                ->circular(),
+                ->circular()
+                ->disk('public'),
 
             Tables\Columns\TextColumn::make('nombre')
                 ->label('Nombre')
@@ -100,17 +131,13 @@ class AlumnoResource extends Resource
                 ->searchable()
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('grupo.grupo')
-                ->label('Grupo')
-                ->sortable(),
-
-            Tables\Columns\TextColumn::make('grupo.grado.nombre')
-                ->label('Grado')
-                ->sortable(),
+            Tables\Columns\TextColumn::make('clase.nombre')
+                ->label('Clase')
+                ->sortable()
+                ->searchable(),
 
             Tables\Columns\TextColumn::make('nfc_uid')
                 ->label('NFC UID')
-                ->searchable()
                 ->toggleable(),
 
             Tables\Columns\IconColumn::make('activo')
