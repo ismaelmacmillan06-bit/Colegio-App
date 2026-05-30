@@ -68,17 +68,21 @@ class AsistenciaController extends Controller
         }
 
         if (!$asistencia->hora_salida) {
-            $asistencia->update(['hora_salida' => $ahora]);
+    $horaEntrada = Carbon::parse($asistencia->hora_entrada);
+    $ahora_carbon = Carbon::now();
+    
+    if ($ahora_carbon->diffInMinutes($horaEntrada) < 30) {
+        return response()->json([
+            'success' => true,
+            'tipo' => 'muy_pronto',
+            'persona' => 'alumno',
+            'mensaje' => "Aún no puede registrar salida {$alumno->nombre}, mínimo 30 minutos",
+            'hora' => $ahora,
+            'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
+        ]);
+    }
 
-            return response()->json([
-                'success' => true,
-                'tipo' => 'salida',
-                'persona' => 'alumno',
-                'mensaje' => "Hasta mañana {$alumno->nombre}",
-                'hora' => $ahora,
-                'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
-            ]);
-        }
+    $asistencia->update(['hora_salida' => $ahora]);
 
         return response()->json([
             'success' => true,
@@ -86,6 +90,7 @@ class AsistenciaController extends Controller
             'persona' => 'alumno',
             'mensaje' => "{$alumno->nombre} ya tiene entrada y salida registradas hoy",
         ]);
+    }
     }
 
     private function registrarDocente(Docente $docente)
@@ -116,17 +121,22 @@ class AsistenciaController extends Controller
         }
 
         if (!$asistencia->hora_salida) {
-            $asistencia->update(['hora_salida' => $ahora]);
+    $horaEntrada = Carbon::parse($asistencia->hora_entrada);
+    $ahora_carbon = Carbon::now();
 
-            return response()->json([
-                'success' => true,
-                'tipo' => 'salida',
-                'persona' => 'docente',
-                'mensaje' => "Hasta mañana {$docente->nombre}",
-                'hora' => $ahora,
-                'nombre' => $docente->nombre . ' ' . $docente->apellidos,
-            ]);
+    if ($ahora_carbon->diffInMinutes($horaEntrada) < 30) {
+        return response()->json([
+            'success' => true,
+            'tipo' => 'muy_pronto',
+            'persona' => 'docente',
+            'mensaje' => "Aún no puede registrar salida {$docente->nombre}, mínimo 30 minutos",
+            'hora' => $ahora,
+            'nombre' => $docente->nombre . ' ' . $docente->apellidos,
+        ]);
+    }
         }
+        
+    $asistencia->update(['hora_salida' => $ahora]);
 
         return response()->json([
             'success' => true,

@@ -32,9 +32,11 @@ def registrar_asistencia(uid):
         if tipo == 'entrada':
             print(f"\n{icono} ENTRADA registrada")
         elif tipo == 'salida':
-            print(f"\n{icono} SALIDA registrada")
+         print(f"\n{icono} SALIDA registrada")
+        elif tipo == 'muy_pronto':
+         print(f"\n⏱️  Demasiado pronto para registrar salida")
         else:
-            print(f"\nℹ️  {mensaje}")
+         print(f"\nℹ️  {mensaje}")
 
         print(f"   Nombre: {nombre}")
         if hora:
