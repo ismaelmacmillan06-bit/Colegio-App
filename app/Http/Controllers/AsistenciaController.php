@@ -135,7 +135,7 @@ class AsistenciaController extends Controller
         ]);
     }
         }
-        
+
     $asistencia->update(['hora_salida' => $ahora]);
 
         return response()->json([
@@ -208,4 +208,80 @@ class AsistenciaController extends Controller
 
         return response()->json(['encontrado' => false]);
     }
+    public function buscarPersona(Request $request)
+{
+    $tipo = $request->input('tipo', 'alumno');
+    $q = $request->input('q', '');
+
+    if ($tipo === 'alumno') {
+        $resultados = \App\Models\Alumno::where('activo', true)
+            ->where(function($query) use ($q) {
+                $query->where('nombre', 'like', "%{$q}%")
+                      ->orWhere('apellidos', 'like', "%{$q}%");
+            })
+            ->with('clase')
+            ->take(8)
+            ->get()
+            ->map(fn($a) => [
+                'id' => $a->id,
+                'nombre' => $a->nombre . ' ' . $a->apellidos,
+                'info' => $a->clase?->nombre ?? 'Sin clase',
+                'tiene_uid' => !empty($a->nfc_uid),
+            ]);
+    } else {
+        $resultados = \App\Models\Docente::where('activo', true)
+            ->where(function($query) use ($q) {
+                $query->where('nombre', 'like', "%{$q}%")
+                      ->orWhere('apellidos', 'like', "%{$q}%");
+            })
+            ->take(8)
+            ->get()
+            ->map(fn($d) => [
+                'id' => $d->id,
+                'nombre' => $d->nombre . ' ' . $d->apellidos,
+                'info' => $d->materia ?? $d->tipo,
+                'tiene_uid' => !empty($d->nfc_uid),
+            ]);
+    }
+
+    return response()->json($resultados);
+}
+
+public function leerNfcYAsignar(Request $request)
+{
+    $tipo = $request->input('tipo');
+    $id = $request->input('id');
+
+    $pythonPath = 'C:\Users\Ismael Avila\AppData\Local\Python\pythoncore-3.14-64\python.exe';
+    $scriptPath = base_path('python\leer_uid_unico.py');
+
+    $output = shell_exec("\"$pythonPath\" \"$scriptPath\" 2>&1");
+    $uid = trim($output);
+
+    if (empty($uid) || strlen($uid) < 4) {
+        return response()->json([
+            'success' => false,
+            'mensaje' => 'No se detectó ninguna tarjeta. Intenta de nuevo.'
+        ]);
+    }
+
+    if ($tipo === 'alumno') {
+        $persona = \App\Models\Alumno::find($id);
+    } else {
+        $persona = \App\Models\Docente::find($id);
+    }
+
+    if (!$persona) {
+        return response()->json(['success' => false, 'mensaje' => 'Persona no encontrada']);
+    }
+
+    $persona->nfc_uid = $uid;
+    $persona->save();
+
+    return response()->json([
+        'success' => true,
+        'nombre' => $persona->nombre . ' ' . $persona->apellidos,
+        'uid' => $uid,
+    ]);
+}
 }
