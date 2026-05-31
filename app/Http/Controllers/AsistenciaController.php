@@ -8,6 +8,8 @@ use App\Models\Asistencia;
 use App\Models\AsistenciaDocente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AsistenciaNotificacion;
 
 class AsistenciaController extends Controller
 {
@@ -42,6 +44,8 @@ class AsistenciaController extends Controller
     {
         $hoy = Carbon::today();
         $ahora = Carbon::now()->format('H:i:s');
+        $clase = $alumno->clase?->nombre ?? 'Sin clase';
+        $fecha = Carbon::today()->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
 
         $asistencia = Asistencia::where('alumno_id', $alumno->id)
             ->where('fecha', $hoy)
@@ -57,6 +61,39 @@ class AsistenciaController extends Controller
                 'notificacion_salida' => false,
             ]);
 
+            if ($alumno->correo_padre) {
+                Mail::to($alumno->correo_padre)->send(new AsistenciaNotificacion(
+                    nombrePadre: $alumno->nombre_padre ?? 'Padre de familia',
+                    nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
+                    grado: $clase,
+                    fecha: $fecha,
+                    hora: $ahora,
+                    tipo: 'entrada',
+                ));
+            }
+
+            if ($alumno->correo_madre) {
+                Mail::to($alumno->correo_madre)->send(new AsistenciaNotificacion(
+                    nombrePadre: $alumno->nombre_madre ?? 'Madre de familia',
+                    nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
+                    grado: $clase,
+                    fecha: $fecha,
+                    hora: $ahora,
+                    tipo: 'entrada',
+                ));
+            }
+
+            if ($alumno->correo_tutor) {
+                Mail::to($alumno->correo_tutor)->send(new AsistenciaNotificacion(
+                    nombrePadre: $alumno->nombre_tutor ?? 'Tutor',
+                    nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
+                    grado: $clase,
+                    fecha: $fecha,
+                    hora: $ahora,
+                    tipo: 'entrada',
+                ));
+            }
+
             return response()->json([
                 'success' => true,
                 'tipo' => 'entrada',
@@ -68,21 +105,64 @@ class AsistenciaController extends Controller
         }
 
         if (!$asistencia->hora_salida) {
-    $horaEntrada = Carbon::parse($asistencia->hora_entrada);
-    $ahora_carbon = Carbon::now();
-    
-    if ($ahora_carbon->diffInMinutes($horaEntrada) < 30) {
-        return response()->json([
-            'success' => true,
-            'tipo' => 'muy_pronto',
-            'persona' => 'alumno',
-            'mensaje' => "Aún no puede registrar salida {$alumno->nombre}, mínimo 30 minutos",
-            'hora' => $ahora,
-            'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
-        ]);
-    }
+            $horaEntrada = Carbon::parse($asistencia->hora_entrada);
+            $ahora_carbon = Carbon::now();
 
-    $asistencia->update(['hora_salida' => $ahora]);
+            if ($ahora_carbon->diffInMinutes($horaEntrada) < 30) {
+                return response()->json([
+                    'success' => true,
+                    'tipo' => 'muy_pronto',
+                    'persona' => 'alumno',
+                    'mensaje' => "Aún no puede registrar salida {$alumno->nombre}, mínimo 30 minutos",
+                    'hora' => $ahora,
+                    'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
+                ]);
+            }
+
+            $asistencia->update(['hora_salida' => $ahora]);
+
+            if ($alumno->correo_padre) {
+                Mail::to($alumno->correo_padre)->send(new AsistenciaNotificacion(
+                    nombrePadre: $alumno->nombre_padre ?? 'Padre de familia',
+                    nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
+                    grado: $clase,
+                    fecha: $fecha,
+                    hora: $ahora,
+                    tipo: 'salida',
+                ));
+            }
+
+            if ($alumno->correo_madre) {
+                Mail::to($alumno->correo_madre)->send(new AsistenciaNotificacion(
+                    nombrePadre: $alumno->nombre_madre ?? 'Madre de familia',
+                    nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
+                    grado: $clase,
+                    fecha: $fecha,
+                    hora: $ahora,
+                    tipo: 'salida',
+                ));
+            }
+
+            if ($alumno->correo_tutor) {
+                Mail::to($alumno->correo_tutor)->send(new AsistenciaNotificacion(
+                    nombrePadre: $alumno->nombre_tutor ?? 'Tutor',
+                    nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
+                    grado: $clase,
+                    fecha: $fecha,
+                    hora: $ahora,
+                    tipo: 'salida',
+                ));
+            }
+
+            return response()->json([
+                'success' => true,
+                'tipo' => 'salida',
+                'persona' => 'alumno',
+                'mensaje' => "Hasta mañana {$alumno->nombre}",
+                'hora' => $ahora,
+                'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
+            ]);
+        }
 
         return response()->json([
             'success' => true,
@@ -90,7 +170,6 @@ class AsistenciaController extends Controller
             'persona' => 'alumno',
             'mensaje' => "{$alumno->nombre} ya tiene entrada y salida registradas hoy",
         ]);
-    }
     }
 
     private function registrarDocente(Docente $docente)
@@ -121,22 +200,31 @@ class AsistenciaController extends Controller
         }
 
         if (!$asistencia->hora_salida) {
-    $horaEntrada = Carbon::parse($asistencia->hora_entrada);
-    $ahora_carbon = Carbon::now();
+            $horaEntrada = Carbon::parse($asistencia->hora_entrada);
+            $ahora_carbon = Carbon::now();
 
-    if ($ahora_carbon->diffInMinutes($horaEntrada) < 30) {
-        return response()->json([
-            'success' => true,
-            'tipo' => 'muy_pronto',
-            'persona' => 'docente',
-            'mensaje' => "Aún no puede registrar salida {$docente->nombre}, mínimo 30 minutos",
-            'hora' => $ahora,
-            'nombre' => $docente->nombre . ' ' . $docente->apellidos,
-        ]);
-    }
+            if ($ahora_carbon->diffInMinutes($horaEntrada) < 30) {
+                return response()->json([
+                    'success' => true,
+                    'tipo' => 'muy_pronto',
+                    'persona' => 'docente',
+                    'mensaje' => "Aún no puede registrar salida {$docente->nombre}, mínimo 30 minutos",
+                    'hora' => $ahora,
+                    'nombre' => $docente->nombre . ' ' . $docente->apellidos,
+                ]);
+            }
+
+            $asistencia->update(['hora_salida' => $ahora]);
+
+            return response()->json([
+                'success' => true,
+                'tipo' => 'salida',
+                'persona' => 'docente',
+                'mensaje' => "Hasta mañana {$docente->nombre}",
+                'hora' => $ahora,
+                'nombre' => $docente->nombre . ' ' . $docente->apellidos,
+            ]);
         }
-
-    $asistencia->update(['hora_salida' => $ahora]);
 
         return response()->json([
             'success' => true,
@@ -208,80 +296,81 @@ class AsistenciaController extends Controller
 
         return response()->json(['encontrado' => false]);
     }
-    public function buscarPersona(Request $request)
-{
-    $tipo = $request->input('tipo', 'alumno');
-    $q = $request->input('q', '');
 
-    if ($tipo === 'alumno') {
-        $resultados = \App\Models\Alumno::where('activo', true)
-            ->where(function($query) use ($q) {
-                $query->where('nombre', 'like', "%{$q}%")
-                      ->orWhere('apellidos', 'like', "%{$q}%");
-            })
-            ->with('clase')
-            ->take(8)
-            ->get()
-            ->map(fn($a) => [
-                'id' => $a->id,
-                'nombre' => $a->nombre . ' ' . $a->apellidos,
-                'info' => $a->clase?->nombre ?? 'Sin clase',
-                'tiene_uid' => !empty($a->nfc_uid),
-            ]);
-    } else {
-        $resultados = \App\Models\Docente::where('activo', true)
-            ->where(function($query) use ($q) {
-                $query->where('nombre', 'like', "%{$q}%")
-                      ->orWhere('apellidos', 'like', "%{$q}%");
-            })
-            ->take(8)
-            ->get()
-            ->map(fn($d) => [
-                'id' => $d->id,
-                'nombre' => $d->nombre . ' ' . $d->apellidos,
-                'info' => $d->materia ?? $d->tipo,
-                'tiene_uid' => !empty($d->nfc_uid),
-            ]);
+    public function buscarPersona(Request $request)
+    {
+        $tipo = $request->input('tipo', 'alumno');
+        $q = $request->input('q', '');
+
+        if ($tipo === 'alumno') {
+            $resultados = Alumno::where('activo', true)
+                ->where(function($query) use ($q) {
+                    $query->where('nombre', 'like', "%{$q}%")
+                          ->orWhere('apellidos', 'like', "%{$q}%");
+                })
+                ->with('clase')
+                ->take(8)
+                ->get()
+                ->map(fn($a) => [
+                    'id' => $a->id,
+                    'nombre' => $a->nombre . ' ' . $a->apellidos,
+                    'info' => $a->clase?->nombre ?? 'Sin clase',
+                    'tiene_uid' => !empty($a->nfc_uid),
+                ]);
+        } else {
+            $resultados = Docente::where('activo', true)
+                ->where(function($query) use ($q) {
+                    $query->where('nombre', 'like', "%{$q}%")
+                          ->orWhere('apellidos', 'like', "%{$q}%");
+                })
+                ->take(8)
+                ->get()
+                ->map(fn($d) => [
+                    'id' => $d->id,
+                    'nombre' => $d->nombre . ' ' . $d->apellidos,
+                    'info' => $d->materia ?? $d->tipo,
+                    'tiene_uid' => !empty($d->nfc_uid),
+                ]);
+        }
+
+        return response()->json($resultados);
     }
 
-    return response()->json($resultados);
-}
+    public function leerNfcYAsignar(Request $request)
+    {
+        $tipo = $request->input('tipo');
+        $id = $request->input('id');
 
-public function leerNfcYAsignar(Request $request)
-{
-    $tipo = $request->input('tipo');
-    $id = $request->input('id');
+        $pythonPath = 'C:\Users\Ismael Avila\AppData\Local\Python\pythoncore-3.14-64\python.exe';
+        $scriptPath = base_path('python\leer_uid_unico.py');
 
-    $pythonPath = 'C:\Users\Ismael Avila\AppData\Local\Python\pythoncore-3.14-64\python.exe';
-    $scriptPath = base_path('python\leer_uid_unico.py');
+        $output = shell_exec("\"$pythonPath\" \"$scriptPath\" 2>&1");
+        $uid = trim($output);
 
-    $output = shell_exec("\"$pythonPath\" \"$scriptPath\" 2>&1");
-    $uid = trim($output);
+        if (empty($uid) || strlen($uid) < 4) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'No se detectó ninguna tarjeta. Intenta de nuevo.'
+            ]);
+        }
 
-    if (empty($uid) || strlen($uid) < 4) {
+        if ($tipo === 'alumno') {
+            $persona = Alumno::find($id);
+        } else {
+            $persona = Docente::find($id);
+        }
+
+        if (!$persona) {
+            return response()->json(['success' => false, 'mensaje' => 'Persona no encontrada']);
+        }
+
+        $persona->nfc_uid = $uid;
+        $persona->save();
+
         return response()->json([
-            'success' => false,
-            'mensaje' => 'No se detectó ninguna tarjeta. Intenta de nuevo.'
+            'success' => true,
+            'nombre' => $persona->nombre . ' ' . $persona->apellidos,
+            'uid' => $uid,
         ]);
     }
-
-    if ($tipo === 'alumno') {
-        $persona = \App\Models\Alumno::find($id);
-    } else {
-        $persona = \App\Models\Docente::find($id);
-    }
-
-    if (!$persona) {
-        return response()->json(['success' => false, 'mensaje' => 'Persona no encontrada']);
-    }
-
-    $persona->nfc_uid = $uid;
-    $persona->save();
-
-    return response()->json([
-        'success' => true,
-        'nombre' => $persona->nombre . ' ' . $persona->apellidos,
-        'uid' => $uid,
-    ]);
-}
 }
