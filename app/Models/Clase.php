@@ -28,4 +28,9 @@ class Clase extends Model
     {
         return $this->hasMany(Docente::class);
     }
+
+    public function actividades()
+    {
+        return $this->hasMany(Actividad::class);
+    }
 }
