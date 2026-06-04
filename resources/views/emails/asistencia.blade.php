@@ -15,7 +15,10 @@
                     <tr>
                         <td align="center" style="background:#1a1a2e;padding:30px;">
                             <h1 style="color:#ffffff;margin:0;font-size:22px;">
-                                {{ $tipo === 'entrada' ? '✅ Registro de Entrada' : '🏠 Registro de Salida' }}
+                                @if($tipo === 'entrada') ✅ Registro de Entrada
+                                @elseif($tipo === 'ausencia') ⚠️ Aviso de Inasistencia
+                                @else 🏠 Registro de Salida
+                                @endif
                             </h1>
                             <p style="color:#6eb8f5;margin:8px 0 0;font-size:14px;">{{ $nombreColegio }}</p>
                         </td>
@@ -32,6 +35,8 @@
                             <p style="font-size:15px;color:#555555;line-height:1.6;">
                                 @if($tipo === 'entrada')
                                     Te informamos que <strong>{{ $nombreAlumno }}</strong> ha llegado al colegio y fue registrado exitosamente.
+                                @elseif($tipo === 'ausencia')
+                                    Te informamos que <strong>{{ $nombreAlumno }}</strong> <span style="color:#d97706;font-weight:bold;">no se presentó al colegio el día de hoy</span>. Si tienes alguna duda, comunícate con la institución.
                                 @else
                                     Te informamos que <strong>{{ $nombreAlumno }}</strong> ha salido del colegio.
                                 @endif
@@ -50,10 +55,12 @@
                                         <p style="margin:8px 0;font-size:15px;">
                                             📅 <strong>Fecha:</strong> {{ $fecha }}
                                         </p>
+                                        @if($tipo !== 'ausencia')
                                         <p style="margin:8px 0;font-size:15px;">
                                             ⏰ <strong>Hora de {{ $tipo === 'entrada' ? 'ingreso' : 'salida' }}:</strong>
                                             <strong style="color:#2196f3;">{{ $hora }}</strong>
                                         </p>
+                                        @endif
                                     </td>
                                 </tr>
                             </table>

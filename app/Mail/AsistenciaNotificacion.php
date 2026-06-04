@@ -24,9 +24,11 @@ class AsistenciaNotificacion extends Mailable
 
     public function envelope(): Envelope
     {
-        $asunto = $this->tipo === 'entrada'
-            ? "✅ {$this->nombreAlumno} llegó al colegio"
-            : "🏠 {$this->nombreAlumno} salió del colegio";
+        $asunto = match($this->tipo) {
+            'entrada'  => "✅ {$this->nombreAlumno} llegó al colegio",
+            'ausencia' => "⚠️ {$this->nombreAlumno} no se presentó al colegio hoy",
+            default    => "🏠 {$this->nombreAlumno} salió del colegio",
+        };
 
         return new Envelope(subject: $asunto);
     }

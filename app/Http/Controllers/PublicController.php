@@ -42,4 +42,13 @@ class PublicController extends Controller
 
         return view('public.menu', compact('menu', 'dias'));
     }
+    public function tienda()
+    {
+        return view('public.tienda');
+    }
+
+    public function bienvenida()
+    {
+        return view('public.bienvenida');
+    }
 }

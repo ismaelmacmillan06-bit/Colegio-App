@@ -6,7 +6,11 @@ use App\Models\Actividad;
 use App\Models\Asistencia;
 use App\Models\CalificacionActividad;
 use App\Models\Clase;
+use App\Models\CorteAsistencia;
+use App\Models\CorteDetalle;
 use App\Models\Materia;
+use App\Mail\AsistenciaNotificacion;
+use Illuminate\Support\Facades\Mail;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -41,6 +45,8 @@ class ClaseDetalle extends Page implements HasActions, HasForms
     public ?int $materiaId = null;
 
     public ?int $actividadAbiertaId = null;
+
+    public ?int $corteExpandidoId = null;
 
     public function mount(): void
     {
@@ -304,5 +310,361 @@ class ClaseDetalle extends Page implements HasActions, HasForms
                     ->success()
                     ->send();
             });
+    }
+
+    // ─── CORTES DE ASISTENCIA ────────────────────────────────────────────────
+
+    #[Computed]
+    public function corteEntradaHoy(): ?CorteAsistencia
+    {
+        return CorteAsistencia::where('clase_id', $this->claseId)
+            ->where('fecha', today())
+            ->where('tipo', 'entrada')
+            ->first();
+    }
+
+    #[Computed]
+    public function corteSalidaHoy(): ?CorteAsistencia
+    {
+        return CorteAsistencia::where('clase_id', $this->claseId)
+            ->where('fecha', today())
+            ->where('tipo', 'salida')
+            ->first();
+    }
+
+    #[Computed]
+    public function historialCortes()
+    {
+        return CorteAsistencia::where('clase_id', $this->claseId)
+            ->orderBy('fecha', 'desc')
+            ->orderByRaw("FIELD(tipo, 'entrada', 'salida')")
+            ->get();
+    }
+
+    #[Computed]
+    public function detallesCorteExpandido(): array
+    {
+        if (! $this->corteExpandidoId) {
+            return [];
+        }
+
+        return CorteDetalle::where('corte_id', $this->corteExpandidoId)
+            ->with('alumno')
+            ->get()
+            ->map(fn($d) => [
+                'id'     => $d->id,
+                'nombre' => $d->alumno->nombre . ' ' . $d->alumno->apellidos,
+                'estado' => $d->estado,
+                'nota'   => $d->nota,
+            ])
+            ->sortBy('nombre')
+            ->values()
+            ->toArray();
+    }
+
+    public function toggleCorte(int $id): void
+    {
+        $this->corteExpandidoId = ($this->corteExpandidoId === $id) ? null : $id;
+        unset($this->detallesCorteExpandido);
+    }
+
+    public function marcarEntradaAction(): Action
+    {
+        return Action::make('marcarEntrada')
+            ->label('Marcar Entrada')
+            ->icon('heroicon-o-arrow-right-circle')
+            ->color('primary')
+            ->requiresConfirmation()
+            ->modalHeading('Notificar Entrada')
+            ->modalDescription('Estás a punto de mandar correos a los padres de familia de los alumnos que NO se presentaron hoy. ¿Deseas continuar?')
+            ->modalSubmitActionLabel('Enviar')
+            ->modalCancelActionLabel('Cancelar')
+            ->action(function (): void {
+                if ($this->corteEntradaHoy) {
+                    Notification::make()
+                        ->title('La entrada ya fue marcada hoy a las ' . substr($this->corteEntradaHoy->hora_corte, 0, 5))
+                        ->warning()->send();
+                    return;
+                }
+
+                $hoy    = Carbon::today();
+                $ahora  = now()->format('H:i:s');
+                $fecha  = Carbon::today()->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+                $clase  = $this->clase->nombre;
+                $alumnos = $this->clase->alumnos;
+
+                $corte = CorteAsistencia::create([
+                    'clase_id'           => $this->claseId,
+                    'fecha'              => $hoy,
+                    'tipo'               => 'entrada',
+                    'hora_corte'         => $ahora,
+                    'total_presentes'    => 0,
+                    'total_ausentes'     => 0,
+                    'total_tardanza'     => 0,
+                    'total_justificados' => 0,
+                ]);
+
+                $presentes = $ausentes = $tardanza = 0;
+                $inserts   = [];
+                $correosSent = 0;
+
+                foreach ($alumnos as $alumno) {
+                    $asistencia = Asistencia::where('alumno_id', $alumno->id)
+                        ->where('fecha', $hoy)->first();
+
+                    $estado = $asistencia?->estado ?? 'ausente';
+
+                    // Registrar hora_entrada si el alumno fue marcado manualmente pero no tiene hora
+                    if ($estado === 'presente' && $asistencia && ! $asistencia->hora_entrada) {
+                        $asistencia->update(['hora_entrada' => $ahora]);
+                    }
+
+                    // Crear registro ausente y enviar correo
+                    if ($estado === 'ausente') {
+                        if (! $asistencia) {
+                            Asistencia::create([
+                                'alumno_id'            => $alumno->id,
+                                'fecha'                => $hoy,
+                                'estado'               => 'ausente',
+                                'notificacion_entrada' => true,
+                                'notificacion_salida'  => false,
+                            ]);
+                        }
+                        $this->enviarCorreos($alumno, $clase, $fecha, $ahora, 'ausencia');
+                        $correosSent++;
+                        $ausentes++;
+                    } elseif ($estado === 'tardanza') {
+                        $tardanza++;
+                    } else {
+                        $presentes++;
+                    }
+
+                    $inserts[] = [
+                        'corte_id'   => $corte->id,
+                        'alumno_id'  => $alumno->id,
+                        'estado'     => $estado,
+                        'nota'       => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                CorteDetalle::insert($inserts);
+                $corte->update([
+                    'total_presentes' => $presentes,
+                    'total_ausentes'  => $ausentes,
+                    'total_tardanza'  => $tardanza,
+                ]);
+
+                unset($this->corteEntradaHoy);
+                unset($this->historialCortes);
+                unset($this->alumnosHoy);
+
+                Notification::make()
+                    ->title("Entrada registrada — {$correosSent} aviso(s) de ausencia enviados")
+                    ->success()->send();
+            });
+    }
+
+    public function marcarSalidaAction(): Action
+    {
+        return Action::make('marcarSalida')
+            ->label('Marcar Salida')
+            ->icon('heroicon-o-arrow-left-circle')
+            ->color('warning')
+            ->requiresConfirmation()
+            ->modalHeading('Notificar Salida')
+            ->modalDescription('Estás a punto de notificar la salida de los alumnos presentes a sus padres de familia. ¿Deseas continuar?')
+            ->modalSubmitActionLabel('Enviar')
+            ->modalCancelActionLabel('Cancelar')
+            ->action(function (): void {
+                if (! $this->corteEntradaHoy) {
+                    Notification::make()
+                        ->title('Debes registrar la entrada primero antes de marcar la salida.')
+                        ->warning()->send();
+                    return;
+                }
+
+                if ($this->corteSalidaHoy) {
+                    Notification::make()
+                        ->title('La salida ya fue marcada hoy a las ' . substr($this->corteSalidaHoy->hora_corte, 0, 5))
+                        ->warning()->send();
+                    return;
+                }
+
+                $hoy    = Carbon::today();
+                $ahora  = now()->format('H:i:s');
+                $fecha  = Carbon::today()->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+                $clase  = $this->clase->nombre;
+
+                // Solo alumnos marcados como presentes en el corte de entrada
+                $presentesIds = CorteDetalle::where('corte_id', $this->corteEntradaHoy->id)
+                    ->where('estado', 'presente')
+                    ->pluck('alumno_id');
+
+                $corte = CorteAsistencia::create([
+                    'clase_id'           => $this->claseId,
+                    'fecha'              => $hoy,
+                    'tipo'               => 'salida',
+                    'hora_corte'         => $ahora,
+                    'total_presentes'    => $presentesIds->count(),
+                    'total_ausentes'     => 0,
+                    'total_tardanza'     => 0,
+                    'total_justificados' => 0,
+                ]);
+
+                $inserts     = [];
+                $correosSent = 0;
+
+                foreach ($this->clase->alumnos as $alumno) {
+                    $estaPresente = $presentesIds->contains($alumno->id);
+                    $estado = $estaPresente ? 'presente' : 'ausente';
+
+                    if ($estaPresente) {
+                        // Registrar hora_salida
+                        Asistencia::where('alumno_id', $alumno->id)
+                            ->where('fecha', $hoy)
+                            ->update(['hora_salida' => $ahora]);
+
+                        // Enviar correo de salida
+                        $this->enviarCorreos($alumno, $clase, $fecha, $ahora, 'salida');
+                        $correosSent++;
+                    }
+
+                    $inserts[] = [
+                        'corte_id'   => $corte->id,
+                        'alumno_id'  => $alumno->id,
+                        'estado'     => $estado,
+                        'nota'       => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                CorteDetalle::insert($inserts);
+
+                unset($this->corteSalidaHoy);
+                unset($this->historialCortes);
+                unset($this->alumnosHoy);
+
+                Notification::make()
+                    ->title("Salida registrada — {$correosSent} notificación(es) enviadas")
+                    ->success()->send();
+            });
+    }
+
+    private function enviarCorreos($alumno, string $clase, string $fecha, string $hora, string $tipo): void
+    {
+        $nombreAlumno = $alumno->nombre . ' ' . $alumno->apellidos;
+        $destinatarios = [
+            [$alumno->correo_padre, $alumno->nombre_padre ?? 'Padre de familia'],
+            [$alumno->correo_madre, $alumno->nombre_madre ?? 'Madre de familia'],
+            [$alumno->correo_tutor, $alumno->nombre_tutor ?? 'Tutor'],
+        ];
+
+        foreach ($destinatarios as [$correo, $nombrePadre]) {
+            if (! $correo) continue;
+
+            try {
+                Mail::to($correo)->queue(new AsistenciaNotificacion(
+                    nombrePadre:  $nombrePadre,
+                    nombreAlumno: $nombreAlumno,
+                    grado:        $clase,
+                    fecha:        $fecha,
+                    hora:         $hora,
+                    tipo:         $tipo,
+                ));
+            } catch (\Throwable) {
+                // Fallo silencioso para no interrumpir el registro de los demás alumnos
+            }
+        }
+    }
+
+    public function editarEstadoCorteAction(): Action
+    {
+        return Action::make('editarEstadoCorte')
+            ->label('Editar estado')
+            ->icon('heroicon-o-pencil')
+            ->color('warning')
+            ->mountUsing(function ($form, array $arguments) {
+                $detalle = CorteDetalle::find($arguments['detalle_id']);
+                $form->fill([
+                    'estado' => $detalle?->estado,
+                    'nota'   => $detalle?->nota,
+                ]);
+            })
+            ->form([
+                Select::make('estado')
+                    ->label('Estado')
+                    ->options([
+                        'presente'    => 'Presente',
+                        'ausente'     => 'Ausente',
+                        'tardanza'    => 'Tardanza',
+                        'justificado' => 'Falta justificada',
+                    ])
+                    ->required(),
+
+                TextInput::make('nota')
+                    ->label('Nota / Observación (opcional)')
+                    ->nullable(),
+            ])
+            ->action(function (array $data, array $arguments): void {
+                $detalle = CorteDetalle::findOrFail($arguments['detalle_id']);
+                $detalle->update(['estado' => $data['estado'], 'nota' => $data['nota']]);
+
+                $detalle->corte->recalcularTotales();
+
+                unset($this->historialCortes);
+                unset($this->detallesCorteExpandido);
+
+                Notification::make()
+                    ->title('Estado actualizado')
+                    ->success()
+                    ->send();
+            });
+    }
+
+    // ─── MATRIZ DE ASISTENCIA ────────────────────────────────────────────────
+
+    #[Computed]
+    public function matrizAsistencia(): array
+    {
+        $cortes = CorteAsistencia::where('clase_id', $this->claseId)
+            ->where('tipo', 'entrada')
+            ->orderBy('fecha', 'asc')
+            ->get();
+
+        if ($cortes->isEmpty()) {
+            return ['fechas' => [], 'alumnos' => []];
+        }
+
+        // Carga todos los detalles en una sola query para evitar N+1
+        $detalles = CorteDetalle::whereIn('corte_id', $cortes->pluck('id'))
+            ->get()
+            ->keyBy(fn($d) => $d->corte_id . '-' . $d->alumno_id);
+
+        $alumnos = $this->clase->alumnos;
+
+        $fechas = $cortes->map(fn($c) => [
+            'id'    => $c->id,
+            'fecha' => $c->fecha->format('d/m/Y'),
+            'dia'   => $c->fecha->locale('es')->isoFormat('ddd'),
+        ])->toArray();
+
+        $filas = $alumnos->map(function ($alumno) use ($cortes, $detalles) {
+            $dias = $cortes->map(function ($corte) use ($alumno, $detalles) {
+                $key     = $corte->id . '-' . $alumno->id;
+                $detalle = $detalles->get($key);
+                return $detalle?->estado; // null = sin registro ese día
+            })->toArray();
+
+            return [
+                'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
+                'foto'   => $alumno->foto,
+                'dias'   => $dias,
+            ];
+        })->sortBy('nombre')->values()->toArray();
+
+        return ['fechas' => $fechas, 'alumnos' => $filas];
     }
 }

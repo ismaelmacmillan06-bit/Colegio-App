@@ -9,6 +9,7 @@ use App\Models\AsistenciaDocente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 use App\Mail\AsistenciaNotificacion;
 
 class AsistenciaController extends Controller
@@ -46,6 +47,7 @@ class AsistenciaController extends Controller
         $ahora = Carbon::now()->format('H:i:s');
         $clase = $alumno->clase?->nombre ?? 'Sin clase';
         $fecha = Carbon::today()->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+        $foto = $alumno->foto ? asset('storage/' . $alumno->foto) : null;
 
         $asistencia = Asistencia::where('alumno_id', $alumno->id)
             ->where('fecha', $hoy)
@@ -61,8 +63,18 @@ class AsistenciaController extends Controller
                 'notificacion_salida' => false,
             ]);
 
+            Cache::put('ultimo_evento', [
+                'hay_registro' => true,
+                'tipo' => 'entrada',
+                'persona' => 'alumno',
+                'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
+                'clase' => $clase,
+                'hora' => $ahora,
+                'foto' => $foto,
+            ], 8);
+
             if ($alumno->correo_padre) {
-                Mail::to($alumno->correo_padre)->send(new AsistenciaNotificacion(
+                Mail::to($alumno->correo_padre)->queue(new AsistenciaNotificacion(
                     nombrePadre: $alumno->nombre_padre ?? 'Padre de familia',
                     nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
                     grado: $clase,
@@ -73,7 +85,7 @@ class AsistenciaController extends Controller
             }
 
             if ($alumno->correo_madre) {
-                Mail::to($alumno->correo_madre)->send(new AsistenciaNotificacion(
+                Mail::to($alumno->correo_madre)->queue(new AsistenciaNotificacion(
                     nombrePadre: $alumno->nombre_madre ?? 'Madre de familia',
                     nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
                     grado: $clase,
@@ -84,7 +96,7 @@ class AsistenciaController extends Controller
             }
 
             if ($alumno->correo_tutor) {
-                Mail::to($alumno->correo_tutor)->send(new AsistenciaNotificacion(
+                Mail::to($alumno->correo_tutor)->queue(new AsistenciaNotificacion(
                     nombrePadre: $alumno->nombre_tutor ?? 'Tutor',
                     nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
                     grado: $clase,
@@ -109,6 +121,16 @@ class AsistenciaController extends Controller
             $ahora_carbon = Carbon::now();
 
             if ($ahora_carbon->diffInMinutes($horaEntrada) < 30) {
+                Cache::put('ultimo_evento', [
+                    'hay_registro' => true,
+                    'tipo' => 'muy_pronto',
+                    'persona' => 'alumno',
+                    'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
+                    'clase' => $clase,
+                    'hora' => $ahora,
+                    'foto' => $foto,
+                ], 8);
+
                 return response()->json([
                     'success' => true,
                     'tipo' => 'muy_pronto',
@@ -121,8 +143,18 @@ class AsistenciaController extends Controller
 
             $asistencia->update(['hora_salida' => $ahora]);
 
+            Cache::put('ultimo_evento', [
+                'hay_registro' => true,
+                'tipo' => 'salida',
+                'persona' => 'alumno',
+                'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
+                'clase' => $clase,
+                'hora' => $ahora,
+                'foto' => $foto,
+            ], 8);
+
             if ($alumno->correo_padre) {
-                Mail::to($alumno->correo_padre)->send(new AsistenciaNotificacion(
+                Mail::to($alumno->correo_padre)->queue(new AsistenciaNotificacion(
                     nombrePadre: $alumno->nombre_padre ?? 'Padre de familia',
                     nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
                     grado: $clase,
@@ -133,7 +165,7 @@ class AsistenciaController extends Controller
             }
 
             if ($alumno->correo_madre) {
-                Mail::to($alumno->correo_madre)->send(new AsistenciaNotificacion(
+                Mail::to($alumno->correo_madre)->queue(new AsistenciaNotificacion(
                     nombrePadre: $alumno->nombre_madre ?? 'Madre de familia',
                     nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
                     grado: $clase,
@@ -144,7 +176,7 @@ class AsistenciaController extends Controller
             }
 
             if ($alumno->correo_tutor) {
-                Mail::to($alumno->correo_tutor)->send(new AsistenciaNotificacion(
+                Mail::to($alumno->correo_tutor)->queue(new AsistenciaNotificacion(
                     nombrePadre: $alumno->nombre_tutor ?? 'Tutor',
                     nombreAlumno: $alumno->nombre . ' ' . $alumno->apellidos,
                     grado: $clase,
@@ -164,6 +196,16 @@ class AsistenciaController extends Controller
             ]);
         }
 
+        Cache::put('ultimo_evento', [
+            'hay_registro' => true,
+            'tipo' => 'ya_registrado',
+            'persona' => 'alumno',
+            'nombre' => $alumno->nombre . ' ' . $alumno->apellidos,
+            'clase' => $clase,
+            'hora' => $ahora,
+            'foto' => $foto,
+        ], 8);
+
         return response()->json([
             'success' => true,
             'tipo' => 'ya_registrado',
@@ -176,6 +218,8 @@ class AsistenciaController extends Controller
     {
         $hoy = Carbon::today();
         $ahora = Carbon::now()->format('H:i:s');
+        $foto = $docente->foto ? asset('storage/' . $docente->foto) : null;
+        $materia = $docente->materia ?? $docente->tipo;
 
         $asistencia = AsistenciaDocente::where('docente_id', $docente->id)
             ->where('fecha', $hoy)
@@ -188,6 +232,16 @@ class AsistenciaController extends Controller
                 'hora_entrada' => $ahora,
                 'estado' => 'presente',
             ]);
+
+            Cache::put('ultimo_evento', [
+                'hay_registro' => true,
+                'tipo' => 'entrada',
+                'persona' => 'docente',
+                'nombre' => $docente->nombre . ' ' . $docente->apellidos,
+                'clase' => $materia,
+                'hora' => $ahora,
+                'foto' => $foto,
+            ], 8);
 
             return response()->json([
                 'success' => true,
@@ -204,6 +258,16 @@ class AsistenciaController extends Controller
             $ahora_carbon = Carbon::now();
 
             if ($ahora_carbon->diffInMinutes($horaEntrada) < 30) {
+                Cache::put('ultimo_evento', [
+                    'hay_registro' => true,
+                    'tipo' => 'muy_pronto',
+                    'persona' => 'docente',
+                    'nombre' => $docente->nombre . ' ' . $docente->apellidos,
+                    'clase' => $materia,
+                    'hora' => $ahora,
+                    'foto' => $foto,
+                ], 8);
+
                 return response()->json([
                     'success' => true,
                     'tipo' => 'muy_pronto',
@@ -216,6 +280,16 @@ class AsistenciaController extends Controller
 
             $asistencia->update(['hora_salida' => $ahora]);
 
+            Cache::put('ultimo_evento', [
+                'hay_registro' => true,
+                'tipo' => 'salida',
+                'persona' => 'docente',
+                'nombre' => $docente->nombre . ' ' . $docente->apellidos,
+                'clase' => $materia,
+                'hora' => $ahora,
+                'foto' => $foto,
+            ], 8);
+
             return response()->json([
                 'success' => true,
                 'tipo' => 'salida',
@@ -225,6 +299,16 @@ class AsistenciaController extends Controller
                 'nombre' => $docente->nombre . ' ' . $docente->apellidos,
             ]);
         }
+
+        Cache::put('ultimo_evento', [
+            'hay_registro' => true,
+            'tipo' => 'ya_registrado',
+            'persona' => 'docente',
+            'nombre' => $docente->nombre . ' ' . $docente->apellidos,
+            'clase' => $materia,
+            'hora' => $ahora,
+            'foto' => $foto,
+        ], 8);
 
         return response()->json([
             'success' => true,
@@ -372,5 +456,16 @@ class AsistenciaController extends Controller
             'nombre' => $persona->nombre . ' ' . $persona->apellidos,
             'uid' => $uid,
         ]);
+    }
+
+    public function ultimoRegistro()
+    {
+        $evento = Cache::get('ultimo_evento');
+
+        if ($evento) {
+            return response()->json($evento);
+        }
+
+        return response()->json(['hay_registro' => false]);
     }
 }

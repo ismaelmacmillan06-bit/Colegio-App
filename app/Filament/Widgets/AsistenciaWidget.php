@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Asistencia;
 use App\Models\AsistenciaDocente;
 use App\Models\Clase;
+use App\Models\CorteDetalle;
 use App\Models\Docente;
 use App\Models\Alumno;
 use Filament\Widgets\Widget;
@@ -89,6 +90,15 @@ class AsistenciaWidget extends Widget
             ->groupBy('clases.nivel')
             ->pluck('total', 'nivel');
 
+        // Faltas del día basadas en los cortes de entrada registrados por los maestros
+        $faltasHoy = CorteDetalle::whereHas('corte', fn($q) =>
+            $q->where('fecha', $hoy)->where('tipo', 'entrada')
+        )->where('estado', 'ausente')->count();
+
+        $clasesCortadas = \App\Models\CorteAsistencia::where('fecha', $hoy)
+            ->where('tipo', 'entrada')
+            ->count();
+
         return [
             'clases' => $datosClases,
             'directivos' => $directivos,
@@ -100,6 +110,8 @@ class AsistenciaWidget extends Widget
             'alumnos_por_nivel' => $alumnosPorNivel,
             'total_directivos' => $directivos->count(),
             'total_extracurriculares' => $extracurriculares->count(),
+            'faltas_hoy' => $faltasHoy,
+            'clases_cortadas' => $clasesCortadas,
         ];
     }
 }

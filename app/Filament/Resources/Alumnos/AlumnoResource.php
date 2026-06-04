@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Alumnos;
 use App\Filament\Resources\Alumnos\Pages;
 use App\Models\Alumno;
 use App\Models\Clase;
+use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -145,6 +146,33 @@ class AlumnoResource extends Resource
                 ->boolean(),
         ])
         ->actions([
+            Action::make('generarCredencial')
+                ->label('Credencial')
+                ->icon('heroicon-o-identification')
+                ->color('success')
+                ->requiresConfirmation(false)
+                ->form([
+                    Select::make('responsable')
+                        ->label('Datos del reverso')
+                        ->options([
+                            'padre'  => 'Padre',
+                            'madre'  => 'Madre',
+                            'tutor'  => 'Tutor Legal',
+                        ])
+                        ->default('padre')
+                        ->required(),
+                ])
+                ->modalHeading('Generar Credencial')
+                ->modalDescription('Selecciona qué contacto aparecerá en el reverso de la credencial.')
+                ->modalSubmitActionLabel('Descargar PDF')
+                ->action(function (Alumno $record, array $data) {
+                    $url = route('credencial.alumno', [
+                        'alumno'      => $record->id,
+                        'responsable' => $data['responsable'],
+                    ]);
+                    return redirect()->to($url);
+                }),
+
             \Filament\Actions\EditAction::make(),
             \Filament\Actions\DeleteAction::make(),
         ])

@@ -12,7 +12,7 @@
     </div>
 
     {{-- STATS CARDS --}}
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
 
         <div style="background: linear-gradient(135deg, #2196f3, #6eb8f5); border-radius: 14px; padding: 1.25rem; color: white; position: relative; overflow: hidden;">
             <div style="position: absolute; right: -10px; top: -10px; width: 70px; height: 70px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
@@ -47,6 +47,20 @@
                 <div style="background: #6eb8f5; height: 4px; border-radius: 99px; width: {{ $asistencia_general }}%;"></div>
             </div>
             <div style="font-size: 0.68rem; opacity: 0.75; margin-top: 4px;">{{ $total_presentes }} presentes hoy</div>
+        </div>
+
+        {{-- FALTAS HOY --}}
+        <div style="background: linear-gradient(135deg, #dc2626, #f97316); border-radius: 14px; padding: 1.25rem; color: white; position: relative; overflow: hidden;">
+            <div style="position: absolute; right: -10px; top: -10px; width: 70px; height: 70px; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+            <div style="font-size: 0.75rem; opacity: 0.85; margin-bottom: 0.5rem; font-weight: 500;">FALTAS HOY</div>
+            <div style="font-size: 2.2rem; font-weight: 800; line-height: 1;">{{ $faltas_hoy }}</div>
+            <div style="margin-top: 8px; background: rgba(255,255,255,0.2); border-radius: 99px; height: 4px;">
+                @php $pctFaltas = $total_alumnos > 0 ? min(100, round(($faltas_hoy / $total_alumnos) * 100)) : 0; @endphp
+                <div style="background: rgba(255,255,255,0.8); height: 4px; border-radius: 99px; width: {{ $pctFaltas }}%;"></div>
+            </div>
+            <div style="font-size: 0.68rem; opacity: 0.75; margin-top: 4px;">
+                {{ $clases_cortadas }} clase(s) con corte registrado
+            </div>
         </div>
 
     </div>
