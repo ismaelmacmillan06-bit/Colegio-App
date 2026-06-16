@@ -2,35 +2,23 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\ColegioScope;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
 
+#[ScopedBy(ColegioScope::class)]
 class Docente extends Model
 {
     protected $table = 'docentes';
 
     protected $fillable = [
-    'clase_id',
-    'tipo',
-    'nombre',
-    'apellidos',
-    'materia',
-    'foto',
-    'telefono',
-    'nfc_uid',
-    'activo',
-];
-
-    protected $casts = [
-        'activo' => 'boolean',
+        'colegio_id', 'clase_id', 'tipo', 'nombre', 'apellidos',
+        'materia', 'foto', 'telefono', 'nfc_uid', 'activo',
     ];
 
-    public function clase()
-    {
-        return $this->belongsTo(Clase::class);
-    }
+    protected $casts = ['activo' => 'boolean'];
 
-    public function asistencias()
-    {
-        return $this->hasMany(AsistenciaDocente::class);
-    }
+    public function colegio()    { return $this->belongsTo(Colegio::class); }
+    public function clase()      { return $this->belongsTo(Clase::class); }
+    public function asistencias(){ return $this->hasMany(AsistenciaDocente::class); }
 }

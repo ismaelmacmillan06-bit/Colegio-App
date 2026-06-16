@@ -1,0 +1,36 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('colegios', function (Blueprint $table) {
+            $table->id();
+            $table->string('nombre');
+            $table->string('rfc', 13)->nullable();
+            $table->string('email')->nullable();
+            $table->string('telefono', 20)->nullable();
+            $table->string('director')->nullable();
+            $table->text('domicilio')->nullable();
+            $table->string('logo_path')->nullable();
+
+            $table->enum('plan', ['basico', 'estandar', 'premium'])->default('basico');
+            $table->decimal('precio_mensual', 8, 2)->default(0);
+            $table->date('fecha_inicio')->nullable();
+            $table->date('fecha_vencimiento')->nullable();
+
+            $table->boolean('activo')->default(true);
+            $table->text('notas')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('colegios');
+    }
+};
