@@ -6,11 +6,15 @@ use App\Filament\Resources\Alumnos\Pages;
 use App\Models\Alumno;
 use App\Models\Clase;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Tables;
@@ -144,8 +148,138 @@ class AlumnoResource extends Resource
             Tables\Columns\IconColumn::make('activo')
                 ->label('Activo')
                 ->boolean(),
+
+            Tables\Columns\IconColumn::make('expediente_medico')
+                ->label('C.Médico')
+                ->getStateUsing(fn (Alumno $record): bool => $record->expedienteMedico()->exists())
+                ->boolean()
+                ->trueIcon('heroicon-o-clipboard-document-check')
+                ->falseIcon('heroicon-o-clipboard-document')
+                ->trueColor('success')
+                ->falseColor('gray')
+                ->tooltip(fn (Alumno $record): string => $record->expedienteMedico()->exists()
+                    ? 'Expediente registrado'
+                    : 'Sin expediente'),
         ])
         ->actions([
+            Action::make('controlMedico')
+                ->label('C.Médico')
+                ->icon('heroicon-o-clipboard-document-list')
+                ->color('info')
+                ->modalWidth('4xl')
+                ->modalHeading(fn (Alumno $record): string => 'Expediente Médico — ' . $record->nombre . ' ' . $record->apellidos)
+                ->modalSubmitActionLabel('Guardar expediente')
+                ->fillForm(function (Alumno $record): array {
+                    $exp = $record->expedienteMedico;
+                    if (! $exp) return [];
+
+                    return collect($exp->toArray())->only([
+                        'tipo_sangre', 'alergias', 'condiciones_medicas', 'medicamentos',
+                        'restricciones_fisicas', 'medico_nombre', 'medico_telefono',
+                        'medico_cedula', 'seguro_medico', 'numero_poliza',
+                        'fecha_expedicion', 'notas',
+                    ])->toArray();
+                    // archivo_certificado se omite: FileUpload no puede pre-llenarse con rutas existentes
+                })
+                ->form([
+                    Section::make('Información Médica')
+                        ->columns(2)
+                        ->schema([
+                            Select::make('tipo_sangre')
+                                ->label('Tipo de Sangre')
+                                ->options(['A+'=>'A+','A-'=>'A-','B+'=>'B+','B-'=>'B-',
+                                           'AB+'=>'AB+','AB-'=>'AB-','O+'=>'O+','O-'=>'O-'])
+                                ->native(false)
+                                ->placeholder('Desconocido'),
+
+                            DatePicker::make('fecha_expedicion')
+                                ->label('Fecha del certificado')
+                                ->native(false),
+
+                            Textarea::make('alergias')
+                                ->label('Alergias')
+                                ->rows(2)
+                                ->columnSpanFull(),
+
+                            Textarea::make('condiciones_medicas')
+                                ->label('Condiciones médicas preexistentes')
+                                ->rows(2)
+                                ->columnSpanFull(),
+
+                            Textarea::make('medicamentos')
+                                ->label('Medicamentos actuales')
+                                ->rows(2)
+                                ->columnSpanFull(),
+
+                            Textarea::make('restricciones_fisicas')
+                                ->label('Restricciones físicas')
+                                ->placeholder('Ej: No puede hacer educación física, no levantar peso...')
+                                ->rows(2)
+                                ->columnSpanFull(),
+                        ]),
+
+                    Section::make('Médico Tratante')
+                        ->columns(3)
+                        ->schema([
+                            TextInput::make('medico_nombre')
+                                ->label('Nombre del médico'),
+
+                            TextInput::make('medico_telefono')
+                                ->label('Teléfono')
+                                ->tel(),
+
+                            TextInput::make('medico_cedula')
+                                ->label('Cédula profesional'),
+                        ]),
+
+                    Section::make('Seguro Médico')
+                        ->columns(2)
+                        ->schema([
+                            TextInput::make('seguro_medico')
+                                ->label('Nombre del seguro')
+                                ->placeholder('IMSS, ISSSTE, Seguro Popular, GNP...'),
+
+                            TextInput::make('numero_poliza')
+                                ->label('Número de póliza'),
+                        ]),
+
+                    Section::make('Certificado Original')
+                        ->schema([
+                            FileUpload::make('archivo_certificado')
+                                ->label('Subir certificado (foto o PDF)')
+                                ->helperText('Si ya tiene uno guardado, solo sube uno nuevo si quieres reemplazarlo.')
+                                ->acceptedFileTypes(['image/*', 'application/pdf'])
+                                ->disk('public')
+                                ->directory('expedientes-medicos')
+                                ->maxSize(10240)
+                                ->downloadable()
+                                ->openable()
+                                ->nullable(),
+
+                            Textarea::make('notas')
+                                ->label('Notas adicionales')
+                                ->rows(2),
+                        ]),
+                ])
+                ->action(function (array $data, Alumno $record): void {
+                    $existente = $record->expedienteMedico;
+
+                    // Conservar el certificado anterior si no se subió uno nuevo
+                    if (empty($data['archivo_certificado']) && $existente?->archivo_certificado) {
+                        $data['archivo_certificado'] = $existente->archivo_certificado;
+                    }
+
+                    $record->expedienteMedico()->updateOrCreate(
+                        ['alumno_id' => $record->id],
+                        $data
+                    );
+
+                    Notification::make()
+                        ->title('Expediente médico guardado')
+                        ->success()
+                        ->send();
+                }),
+
             Action::make('generarCredencial')
                 ->label('Credencial')
                 ->icon('heroicon-o-identification')

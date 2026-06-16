@@ -39,4 +39,9 @@ protected $fillable = [
     {
         return $this->hasMany(Asistencia::class);
     }
+
+    public function expedienteMedico()
+    {
+        return $this->hasOne(ExpedienteMedico::class);
+    }
 }
