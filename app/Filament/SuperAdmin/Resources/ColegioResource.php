@@ -187,7 +187,7 @@ class ColegioResource extends Resource
                             ->label('Correo de acceso')
                             ->email()
                             ->required()
-                            ->unique('users', 'email'),
+                            ->rules(['required', 'email', 'unique:users,email']),
                         TextInput::make('password')
                             ->label('Contraseña')
                             ->password()

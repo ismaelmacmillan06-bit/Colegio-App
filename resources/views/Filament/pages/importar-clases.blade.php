@@ -14,43 +14,33 @@
             <div style="width: 32px; height: 32px; background: #00004E; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">1</div>
             <div>
                 <h3 style="font-size: 0.95rem; font-weight: 600; margin: 0;">Descarga la plantilla</h3>
-                <p style="font-size: 0.8rem; color: var(--color-text-secondary); margin: 0;">Ábrela en Excel, llena los datos y guárdala. Las clases deben existir antes de importar alumnos.</p>
+                <p style="font-size: 0.8rem; color: var(--color-text-secondary); margin: 0;">Ábrela en Excel, llena los datos y guárdala sin cambiar el formato.</p>
             </div>
         </div>
 
         {{-- Preview de columnas --}}
-        <div style="border: 1px solid var(--color-border-tertiary); border-radius: 8px; overflow: hidden; margin-bottom: 1rem; overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 600px;">
+        <div style="border: 1px solid var(--color-border-tertiary); border-radius: 8px; overflow: hidden; margin-bottom: 1rem;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
                 <thead>
                     <tr style="background: #00004E; color: white;">
-                        <th style="padding: 8px 12px; text-align: left; font-weight: 600;">nombre</th>
-                        <th style="padding: 8px 12px; text-align: left; font-weight: 600;">apellidos</th>
-                        <th style="padding: 8px 12px; text-align: left; font-weight: 600;">clase</th>
-                        <th style="padding: 8px 12px; text-align: left; font-weight: 600;">tel_padre</th>
-                        <th style="padding: 8px 12px; text-align: left; font-weight: 600;">correo_padre</th>
-                        <th style="padding: 8px 12px; text-align: left; font-weight: 600;">nombre_padre</th>
-                        <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: rgba(255,255,255,0.6);">+ 6 más...</th>
+                        <th style="padding: 8px 14px; text-align: left; font-weight: 600;">A — Nombre de la Clase</th>
+                        <th style="padding: 8px 14px; text-align: left; font-weight: 600;">B — Fecha de Fin</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr style="color: var(--color-text-secondary);">
-                        <td style="padding: 7px 12px; border-top: 1px solid var(--color-border-tertiary);">Juan</td>
-                        <td style="padding: 7px 12px; border-top: 1px solid var(--color-border-tertiary);">Pérez García</td>
-                        <td style="padding: 7px 12px; border-top: 1px solid var(--color-border-tertiary);">1°A Primaria</td>
-                        <td style="padding: 7px 12px; border-top: 1px solid var(--color-border-tertiary);">5512345678</td>
-                        <td style="padding: 7px 12px; border-top: 1px solid var(--color-border-tertiary);">papa@correo.com</td>
-                        <td style="padding: 7px 12px; border-top: 1px solid var(--color-border-tertiary);">Carlos Pérez</td>
-                        <td style="padding: 7px 12px; border-top: 1px solid var(--color-border-tertiary); color: var(--color-text-tertiary);">madre, tutor...</td>
+                        <td style="padding: 7px 14px; border-top: 1px solid var(--color-border-tertiary);">1°A Primaria</td>
+                        <td style="padding: 7px 14px; border-top: 1px solid var(--color-border-tertiary);">31/12/2026</td>
+                    </tr>
+                    <tr style="color: var(--color-text-secondary); opacity: 0.5;">
+                        <td style="padding: 7px 14px; border-top: 1px solid var(--color-border-tertiary);">Maternal B</td>
+                        <td style="padding: 7px 14px; border-top: 1px solid var(--color-border-tertiary);">31/07/2026</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.8rem; color: #92400e; margin-bottom: 1rem;">
-            ⚠️ <strong>El nombre de la clase debe coincidir exactamente</strong> con el registrado en el sistema. Ej: <em>1°A Primaria</em>
-        </div>
-
-        <a href="{{ route('importar.plantilla', 'alumnos') }}"
+        <a href="{{ route('importar.plantilla', 'clases') }}"
            style="display: inline-flex; align-items: center; gap: 8px; background: #00004E; color: white; padding: 9px 22px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">
             ⬇️ Descargar plantilla XLSX
         </a>
@@ -66,7 +56,7 @@
             </div>
         </div>
 
-        <form action="{{ route('importar.csv', 'alumnos') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('importar.csv', 'clases') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div style="border: 2px dashed var(--color-border-tertiary); border-radius: 10px; padding: 1.5rem; text-align: center; margin-bottom: 1rem; background: var(--color-background-secondary);">
                 <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
@@ -75,7 +65,7 @@
             </div>
             <button type="submit"
                 style="background: #6ab04c; color: white; padding: 9px 24px; border-radius: 8px; border: none; font-size: 0.875rem; font-weight: 600; cursor: pointer;">
-                Importar Alumnos
+                Importar Clases
             </button>
         </form>
     </div>

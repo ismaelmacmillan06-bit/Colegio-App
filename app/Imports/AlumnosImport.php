@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Alumno;
 use App\Models\Clase;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class AlumnosImport
 {
@@ -12,42 +13,51 @@ class AlumnosImport
 
     public function importar(string $rutaArchivo): void
     {
-        $archivo = fopen($rutaArchivo, 'r');
-        stream_filter_append($archivo, 'convert.iconv.windows-1252/utf-8');
-        $encabezado = fgetcsv($archivo);
+        $spreadsheet = IOFactory::load($rutaArchivo);
+        $sheet       = $spreadsheet->getActiveSheet();
+        $rows        = $sheet->toArray(null, true, true, false);
 
-        while (($fila = fgetcsv($archivo)) !== false) {
-            if (count($fila) < 3) continue;
+        array_shift($rows); // quitar encabezado
 
-            [$nombre, $apellidos, $clase, $telefono_padre, $correo_padre, $nombre_padre,
-             $telefono_madre, $correo_madre, $nombre_madre,
-             $telefono_tutor, $correo_tutor, $nombre_tutor] = array_pad($fila, 12, null);
+        $colegioId = auth()->user()?->colegio_id;
 
-            $claseModel = Clase::where('nombre', trim($clase))->first();
-            if (!$claseModel) {
+        foreach ($rows as $fila) {
+            if (empty(trim((string) ($fila[0] ?? '')))) continue;
+
+            [
+                $nombre, $apellidos, $clase,
+                $telefono_padre, $correo_padre, $nombre_padre,
+                $telefono_madre, $correo_madre, $nombre_madre,
+                $telefono_tutor, $correo_tutor, $nombre_tutor,
+            ] = array_pad($fila, 12, null);
+
+            $claseModel = Clase::where('nombre', trim((string) $clase))
+                ->where('colegio_id', $colegioId)
+                ->first();
+
+            if (! $claseModel) {
                 $this->errores[] = "Clase '{$clase}' no encontrada para {$nombre} {$apellidos}";
                 continue;
             }
 
             Alumno::create([
-                'nombre' => trim($nombre),
-                'apellidos' => trim($apellidos),
-                'clase_id' => $claseModel->id,
-                'nombre_padre' => trim($nombre_padre),
-                'telefono_padre' => trim($telefono_padre),
-                'correo_padre' => trim($correo_padre),
-                'nombre_madre' => trim($nombre_madre),
-                'telefono_madre' => trim($telefono_madre),
-                'correo_madre' => trim($correo_madre),
-                'nombre_tutor' => trim($nombre_tutor),
-                'telefono_tutor' => trim($telefono_tutor),
-                'correo_tutor' => trim($correo_tutor),
-                'activo' => true,
+                'colegio_id'      => $colegioId,
+                'clase_id'        => $claseModel->id,
+                'nombre'          => trim((string) $nombre),
+                'apellidos'       => trim((string) $apellidos),
+                'nombre_padre'    => trim((string) $nombre_padre),
+                'telefono_padre'  => trim((string) $telefono_padre),
+                'correo_padre'    => trim((string) $correo_padre),
+                'nombre_madre'    => trim((string) $nombre_madre),
+                'telefono_madre'  => trim((string) $telefono_madre),
+                'correo_madre'    => trim((string) $correo_madre),
+                'nombre_tutor'    => trim((string) $nombre_tutor),
+                'telefono_tutor'  => trim((string) $telefono_tutor),
+                'correo_tutor'    => trim((string) $correo_tutor),
+                'activo'          => true,
             ]);
 
             $this->importados++;
         }
-
-        fclose($archivo);
     }
 }

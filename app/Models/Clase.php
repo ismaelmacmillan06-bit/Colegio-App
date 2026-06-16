@@ -11,9 +11,12 @@ class Clase extends Model
 {
     protected $table = 'clases';
 
-    protected $fillable = ['colegio_id', 'nombre', 'nivel', 'capacidad', 'activo'];
+    protected $fillable = ['colegio_id', 'nombre', 'nivel', 'fecha_fin', 'capacidad', 'activo'];
 
-    protected $casts = ['activo' => 'boolean'];
+    protected $casts = [
+        'activo'    => 'boolean',
+        'fecha_fin' => 'date',
+    ];
 
     public function colegio()    { return $this->belongsTo(Colegio::class); }
     public function alumnos()    { return $this->hasMany(Alumno::class); }

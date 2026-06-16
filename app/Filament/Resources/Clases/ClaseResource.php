@@ -4,8 +4,8 @@ namespace App\Filament\Resources\Clases;
 
 use App\Filament\Resources\Clases\Pages;
 use App\Models\Clase;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -18,37 +18,38 @@ class ClaseResource extends Resource
     protected static ?string $navigationLabel = 'Clases';
     protected static ?string $modelLabel = 'Clase';
     protected static ?int $navigationSort = 1;
+
     public static function getNavigationGroup(): ?string
-{
-    return 'Escuela';
-}
+    {
+        return 'Escuela';
+    }
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
             TextInput::make('nombre')
-                ->label('Nombre de la Clase')
+                ->label('Nombre de la clase')
                 ->required()
-                ->placeholder('Ej: 1°A Primaria, Kinder 3, 1° Secundaria A')
+                ->placeholder('Ej: 1°A Primaria, Maternal B, Kinder 3')
                 ->maxLength(255)
                 ->columnSpanFull(),
 
             Select::make('nivel')
                 ->label('Nivel')
                 ->options([
-                    'Preescolar' => 'Preescolar',
-                    'Primaria' => 'Primaria',
-                    'Secundaria' => 'Secundaria',
-                ]),
+                    'Maternal'    => 'Maternal',
+                    'Preescolar'  => 'Preescolar',
+                    'Primaria'    => 'Primaria',
+                    'Secundaria'  => 'Secundaria',
+                    'Bachillerato'=> 'Bachillerato',
+                ])
+                ->native(false)
+                ->required(),
 
-            TextInput::make('capacidad')
-                ->label('Capacidad')
-                ->numeric()
-                ->default(30),
-
-            Toggle::make('activo')
-                ->label('Activo')
-                ->default(true),
+            DatePicker::make('fecha_fin')
+                ->label('Fecha de fin')
+                ->native(false)
+                ->placeholder('dd/mm/aaaa'),
         ]);
     }
 
@@ -62,17 +63,29 @@ class ClaseResource extends Resource
 
             Tables\Columns\TextColumn::make('nivel')
                 ->label('Nivel')
+                ->badge()
+                ->color(fn ($state) => match($state) {
+                    'Maternal'     => 'info',
+                    'Preescolar'   => 'success',
+                    'Primaria'     => 'warning',
+                    'Secundaria'   => 'danger',
+                    'Bachillerato' => 'gray',
+                    default        => 'gray',
+                })
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('capacidad')
-                ->label('Capacidad'),
+            Tables\Columns\TextColumn::make('fecha_fin')
+                ->label('Fecha de fin')
+                ->date('d/m/Y')
+                ->sortable(),
 
             Tables\Columns\TextColumn::make('alumnos_count')
                 ->label('Alumnos')
-                ->counts('alumnos'),
+                ->counts('alumnos')
+                ->alignCenter(),
 
             Tables\Columns\IconColumn::make('activo')
-                ->label('Activo')
+                ->label('Activa')
                 ->boolean(),
         ])
         ->actions([
@@ -89,9 +102,9 @@ class ClaseResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListClases::route('/'),
+            'index'  => Pages\ListClases::route('/'),
             'create' => Pages\CreateClase::route('/create'),
-            'edit' => Pages\EditClase::route('/{record}/edit'),
+            'edit'   => Pages\EditClase::route('/{record}/edit'),
         ];
     }
 }
