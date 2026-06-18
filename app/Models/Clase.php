@@ -20,6 +20,12 @@ class Clase extends Model
 
     public function colegio()    { return $this->belongsTo(Colegio::class); }
     public function alumnos()    { return $this->hasMany(Alumno::class); }
-    public function docentes()   { return $this->hasMany(Docente::class); }
     public function actividades(){ return $this->hasMany(Actividad::class); }
+
+    public function docentes()
+    {
+        return $this->belongsToMany(Docente::class, 'clase_docente')
+            ->withPivot('es_titular')
+            ->withTimestamps();
+    }
 }

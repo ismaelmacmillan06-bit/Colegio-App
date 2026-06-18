@@ -16,4 +16,11 @@ class Dashboard extends \Filament\Pages\Dashboard
     {
         return [];
     }
+
+    public function getWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\AsistenciaWidget::class,
+        ];
+    }
 }

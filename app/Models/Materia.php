@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Materia extends Model
 {
-    protected $fillable = ['nombre', 'nivel', 'activo'];
+    protected $fillable = ['nombre', 'campo_formativo', 'orden', 'activo'];
 
     protected $casts = [
         'activo' => 'boolean',
@@ -17,8 +17,8 @@ class Materia extends Model
         return $this->hasMany(Actividad::class);
     }
 
-    public function scopeDeNivel($query, string $nivel)
+    public function docentes()
     {
-        return $query->where('nivel', $nivel);
+        return $this->belongsToMany(Docente::class, 'docente_materia');
     }
 }

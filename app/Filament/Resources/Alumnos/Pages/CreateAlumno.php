@@ -8,4 +8,10 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateAlumno extends CreateRecord
 {
     protected static string $resource = AlumnoResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['colegio_id'] = auth()->user()->colegio_id;
+        return $data;
+    }
 }

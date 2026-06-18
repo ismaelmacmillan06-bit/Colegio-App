@@ -10,9 +10,9 @@ class ImportarAlumnos extends Page
     protected static ?string $navigationLabel = 'Importar Alumnos';
     protected static ?string $title = 'Importación Masiva de Alumnos';
     protected static ?int $navigationSort = 10;
-    
+    public static function getNavigationIcon(): string|\BackedEnum|null { return 'heroicon-o-arrow-down-tray'; }
 
-public static function getNavigationGroup(): ?string
+    public static function getNavigationGroup(): ?string
     {
     return 'Escuela';
 }

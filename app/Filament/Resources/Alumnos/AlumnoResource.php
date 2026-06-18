@@ -26,6 +26,7 @@ class AlumnoResource extends Resource
     protected static ?string $navigationLabel = 'Alumnos';
     protected static ?string $modelLabel = 'Alumno';
     protected static ?int $navigationSort = 2;
+    public static function getNavigationIcon(): \BackedEnum|string|null { return 'heroicon-o-user-group'; }
     public static function getNavigationGroup(): ?string
 {
     return 'Escuela';

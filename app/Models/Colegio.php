@@ -21,10 +21,12 @@ class Colegio extends Model
         'fecha_vencimiento' => 'date',
     ];
 
-    public function alumnos()  { return $this->hasMany(Alumno::class); }
-    public function docentes() { return $this->hasMany(Docente::class); }
-    public function clases()   { return $this->hasMany(Clase::class); }
-    public function users()    { return $this->hasMany(User::class); }
+    public function alumnos()           { return $this->hasMany(Alumno::class); }
+    public function docentes()          { return $this->hasMany(Docente::class); }
+    public function clases()            { return $this->hasMany(Clase::class); }
+    public function users()             { return $this->hasMany(User::class); }
+    public function nivelColegiaturas() { return $this->hasMany(NivelColegiatura::class); }
+    public function colegiaturas()      { return $this->hasMany(Colegiatura::class); }
 
     public function porVencer(): bool
     {

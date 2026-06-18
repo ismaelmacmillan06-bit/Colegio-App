@@ -15,6 +15,7 @@ class GeneradorCredenciales extends Page
     protected static ?string $navigationLabel = 'Generador de Credenciales';
     protected static ?string $title = 'Generador de Credenciales';
     protected static ?int $navigationSort = 15;
+    public static function getNavigationIcon(): string|\BackedEnum|null { return 'heroicon-o-identification'; }
 
     public ?string $frente_actual  = null;
     public ?string $reverso_actual = null;

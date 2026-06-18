@@ -19,6 +19,17 @@ class Docente extends Model
     protected $casts = ['activo' => 'boolean'];
 
     public function colegio()    { return $this->belongsTo(Colegio::class); }
-    public function clase()      { return $this->belongsTo(Clase::class); }
     public function asistencias(){ return $this->hasMany(AsistenciaDocente::class); }
+
+    public function clases()
+    {
+        return $this->belongsToMany(Clase::class, 'clase_docente')
+            ->withPivot('es_titular')
+            ->withTimestamps();
+    }
+
+    public function materias()
+    {
+        return $this->belongsToMany(Materia::class, 'docente_materia');
+    }
 }

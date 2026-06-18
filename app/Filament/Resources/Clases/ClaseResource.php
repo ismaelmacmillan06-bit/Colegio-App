@@ -18,6 +18,7 @@ class ClaseResource extends Resource
     protected static ?string $navigationLabel = 'Clases';
     protected static ?string $modelLabel = 'Clase';
     protected static ?int $navigationSort = 1;
+    public static function getNavigationIcon(): \BackedEnum|string|null { return 'heroicon-o-academic-cap'; }
 
     public static function getNavigationGroup(): ?string
     {
@@ -41,7 +42,8 @@ class ClaseResource extends Resource
                     'Preescolar'  => 'Preescolar',
                     'Primaria'    => 'Primaria',
                     'Secundaria'  => 'Secundaria',
-                    'Bachillerato'=> 'Bachillerato',
+                    'Bachillerato' => 'Bachillerato',
+                    'Licenciatura' => 'Licenciatura',
                 ])
                 ->native(false)
                 ->required(),

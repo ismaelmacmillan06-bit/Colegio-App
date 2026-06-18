@@ -3,7 +3,8 @@
 namespace App\Imports;
 
 use App\Models\Docente;
-use App\Models\Clase;
+use App\Models\Materia;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class DocentesImport
 {
@@ -12,36 +13,57 @@ class DocentesImport
 
     public function importar(string $rutaArchivo): void
     {
-        $archivo = fopen($rutaArchivo, 'r');
-        stream_filter_append($archivo, 'convert.iconv.windows-1252/utf-8');
-        $encabezado = fgetcsv($archivo);
+        $spreadsheet = IOFactory::load($rutaArchivo);
+        $sheet       = $spreadsheet->getActiveSheet();
+        $rows        = $sheet->toArray(null, true, true, false);
 
-        while (($fila = fgetcsv($archivo)) !== false) {
-            if (count($fila) < 2) continue;
+        array_shift($rows); // quitar encabezado
 
-            [$nombre, $apellidos, $clase, $materia, $telefono] = array_pad($fila, 5, null);
+        $colegioId = auth()->user()?->colegio_id;
 
-            $claseModel = null;
-            if ($clase) {
-                $claseModel = Clase::where('nombre', trim($clase))->first();
-                if (!$claseModel) {
-                    $this->errores[] = "Clase '{$clase}' no encontrada para {$nombre} {$apellidos}";
-                    continue;
+        // Índice de materias por nombre para asignación rápida
+        $materiasIndex = Materia::where('activo', true)
+            ->get()
+            ->keyBy(fn($m) => mb_strtolower(trim($m->nombre)));
+
+        foreach ($rows as $fila) {
+            if (empty(trim((string) ($fila[0] ?? '')))) continue;
+
+            [$nombre, $apellidos, $tipo, $telefono, $materiasTexto] = array_pad($fila, 5, null);
+
+            $tipoValido = in_array($tipo, ['titular', 'especialista', 'extracurricular', 'directivo'])
+                ? $tipo
+                : 'titular';
+
+            $docente = Docente::create([
+                'colegio_id' => $colegioId,
+                'nombre'     => trim((string) $nombre),
+                'apellidos'  => trim((string) $apellidos),
+                'tipo'       => $tipoValido,
+                'telefono'   => trim((string) ($telefono ?? '')),
+                'activo'     => true,
+            ]);
+
+            // Asignar materias si vienen separadas por coma
+            if ($materiasTexto) {
+                $nombresMateria = array_map('trim', explode(',', (string) $materiasTexto));
+                $materiasIds    = [];
+
+                foreach ($nombresMateria as $nombreM) {
+                    $key = mb_strtolower($nombreM);
+                    if (isset($materiasIndex[$key])) {
+                        $materiasIds[] = $materiasIndex[$key]->id;
+                    } else {
+                        $this->errores[] = "Materia '{$nombreM}' no encontrada para {$nombre} {$apellidos}";
+                    }
+                }
+
+                if ($materiasIds) {
+                    $docente->materias()->sync($materiasIds);
                 }
             }
 
-            Docente::create([
-                'nombre' => trim($nombre),
-                'apellidos' => trim($apellidos),
-                'clase_id' => $claseModel?->id,
-                'materia' => trim($materia),
-                'telefono' => trim($telefono),
-                'activo' => true,
-            ]);
-
             $this->importados++;
         }
-
-        fclose($archivo);
     }
 }

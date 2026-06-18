@@ -10,6 +10,7 @@ class CorteAsistencia extends Model
 
     protected $fillable = [
         'clase_id',
+        'materia_id',
         'fecha',
         'tipo',
         'hora_corte',
@@ -26,6 +27,11 @@ class CorteAsistencia extends Model
     public function clase()
     {
         return $this->belongsTo(Clase::class);
+    }
+
+    public function materia()
+    {
+        return $this->belongsTo(Materia::class);
     }
 
     public function detalles()

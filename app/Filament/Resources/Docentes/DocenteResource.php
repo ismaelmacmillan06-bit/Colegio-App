@@ -4,11 +4,11 @@ namespace App\Filament\Resources\Docentes;
 
 use App\Filament\Resources\Docentes\Pages;
 use App\Models\Docente;
-use App\Models\Clase;
+use App\Models\Materia;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables;
@@ -20,10 +20,12 @@ class DocenteResource extends Resource
     protected static ?string $navigationLabel = 'Docentes';
     protected static ?string $modelLabel = 'Docente';
     protected static ?int $navigationSort = 3;
+    public static function getNavigationIcon(): \BackedEnum|string|null { return 'heroicon-o-user-circle'; }
+
     public static function getNavigationGroup(): ?string
-{
-    return 'Escuela';
-}
+    {
+        return 'Escuela';
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -42,29 +44,31 @@ class DocenteResource extends Resource
                 ->label('Tipo de Docente')
                 ->required()
                 ->options([
-                    'titular' => 'Titular de Clase',
+                    'titular'         => 'Titular de Clase',
+                    'especialista'    => 'Especialista (por materia)',
                     'extracurricular' => 'Extracurricular',
-                    'directivo' => 'Directivo',
+                    'directivo'       => 'Directivo',
                 ])
-                ->default('titular')
-                ->live(),
-
-            Select::make('clase_id')
-                ->label('Clase Asignada')
-                ->options(Clase::where('activo', true)->pluck('nombre', 'id'))
-                ->searchable()
-                ->nullable()
-                ->visible(fn($get) => $get('tipo') === 'titular'),
-
-            TextInput::make('materia')
-                ->label('Materia / Cargo')
-                ->maxLength(255)
-                ->placeholder('Ej: Inglés, Director General, Danza'),
+                ->default('titular'),
 
             TextInput::make('telefono')
                 ->label('Teléfono')
                 ->tel()
                 ->maxLength(20),
+
+            Select::make('materias')
+                ->label('Materias que imparte')
+                ->multiple()
+                ->relationship(
+                    name: 'materias',
+                    titleAttribute: 'nombre',
+                    modifyQueryUsing: fn($query) => $query->where('activo', true)
+                        ->orderBy('campo_formativo')
+                        ->orderBy('orden'),
+                )
+                ->preload()
+                ->helperText('Las clases se asignan desde el detalle de cada clase.')
+                ->columnSpanFull(),
 
             TextInput::make('nfc_uid')
                 ->label('UID Credencial NFC')
@@ -107,19 +111,25 @@ class DocenteResource extends Resource
                 ->label('Tipo')
                 ->badge()
                 ->color(fn(string $state): string => match($state) {
-                    'titular' => 'success',
+                    'titular'         => 'success',
+                    'especialista'    => 'info',
                     'extracurricular' => 'warning',
-                    'directivo' => 'info',
+                    'directivo'       => 'gray',
+                    default           => 'gray',
                 }),
 
-            Tables\Columns\TextColumn::make('clase.nombre')
-                ->label('Clase')
-                ->sortable()
-                ->placeholder('Sin clase'),
+            Tables\Columns\TextColumn::make('clases.nombre')
+                ->label('Clases')
+                ->badge()
+                ->separator(',')
+                ->placeholder('Sin clases'),
 
-            Tables\Columns\TextColumn::make('materia')
-                ->label('Materia / Cargo')
-                ->searchable(),
+            Tables\Columns\TextColumn::make('materias.nombre')
+                ->label('Materias')
+                ->badge()
+                ->separator(',')
+                ->color('info')
+                ->placeholder('Sin materias'),
 
             Tables\Columns\TextColumn::make('nfc_uid')
                 ->label('NFC UID')
@@ -143,9 +153,9 @@ class DocenteResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDocentes::route('/'),
+            'index'  => Pages\ListDocentes::route('/'),
             'create' => Pages\CreateDocente::route('/create'),
-            'edit' => Pages\EditDocente::route('/{record}/edit'),
+            'edit'   => Pages\EditDocente::route('/{record}/edit'),
         ];
     }
 }

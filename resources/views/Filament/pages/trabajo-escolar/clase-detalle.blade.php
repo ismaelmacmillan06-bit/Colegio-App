@@ -12,7 +12,7 @@
         </a>
 
         <div class="flex-1 sm:text-right">
-            @php $titular = $this->clase->docentes->first(); @endphp
+            @php $titular = $this->clase->docentes->firstWhere(fn($d) => $d->pivot->es_titular) ?? $this->clase->docentes->first(); @endphp
             @if($titular)
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                     Titular: <strong>{{ $titular->nombre }} {{ $titular->apellidos }}</strong>
@@ -27,13 +27,14 @@
     {{-- Tabs --}}
     @php
         $tabs = [
-            'pase-lista'    => ['label' => 'Pase de Lista',     'icon' => 'heroicon-o-clipboard-document-check'],
-            'asistencia'    => ['label' => 'Asistencia',        'icon' => 'heroicon-o-calendar-days'],
-            'tarea'         => ['label' => 'Tareas',            'icon' => 'heroicon-o-document-text'],
-            'trabajo_clase' => ['label' => 'Trabajo en Clase',  'icon' => 'heroicon-o-pencil-square'],
-            'proyecto'      => ['label' => 'Proyectos',         'icon' => 'heroicon-o-beaker'],
-            'examen'        => ['label' => 'Examen',            'icon' => 'heroicon-o-academic-cap'],
-            'extra'         => ['label' => 'Extras',            'icon' => 'heroicon-o-star'],
+            'pase-lista'    => ['label' => 'Pase de Lista',    'icon' => 'heroicon-o-clipboard-document-check'],
+            'asistencia'    => ['label' => 'Asistencia',       'icon' => 'heroicon-o-calendar-days'],
+            'docentes'      => ['label' => 'Docentes',         'icon' => 'heroicon-o-users'],
+            'tarea'         => ['label' => 'Tareas',           'icon' => 'heroicon-o-document-text'],
+            'trabajo_clase' => ['label' => 'Trabajo en Clase', 'icon' => 'heroicon-o-pencil-square'],
+            'proyecto'      => ['label' => 'Proyectos',        'icon' => 'heroicon-o-beaker'],
+            'examen'        => ['label' => 'Examen',           'icon' => 'heroicon-o-academic-cap'],
+            'extra'         => ['label' => 'Extras',           'icon' => 'heroicon-o-star'],
         ];
     @endphp
 
@@ -55,13 +56,46 @@
     {{-- ========================= TAB: PASE DE LISTA ========================= --}}
     @if($tab === 'pase-lista')
 
+        {{-- ── SELECTOR DE MATERIA / PERIODO (solo Secundaria y Bachillerato) ── --}}
+        @if($this->esSecundaria)
+            <div class="mb-5 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Selecciona el periodo / materia:</p>
+                <div class="flex flex-wrap gap-2">
+                    @foreach($this->materias as $m)
+                        <button wire:click="seleccionarMateriaCorte({{ $m['id'] }})"
+                                class="px-3 py-1.5 text-xs rounded-full border font-medium transition
+                                    {{ $corteMateria === $m['id']
+                                        ? 'bg-[#00004E] text-white border-[#00004E]'
+                                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 hover:border-gray-400' }}">
+                            {{ $m['nombre'] }}
+                        </button>
+                    @endforeach
+                </div>
+                @if(! $corteMateria)
+                    <p class="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+                        <x-heroicon-o-exclamation-triangle class="w-3.5 h-3.5" />
+                        Selecciona una materia para ver o registrar el pase de lista de ese periodo.
+                    </p>
+                @endif
+            </div>
+        @endif
+
         {{-- ── TABLA PRINCIPAL: PASE DE LISTA EN VIVO ── --}}
+        @if(! $this->esSecundaria || $corteMateria)
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
 
             <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div class="flex-1">
                     <h3 class="text-base font-semibold text-gray-900 dark:text-white">Pase de Lista</h3>
-                    <p class="text-sm text-gray-500">{{ now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY') }}</p>
+                    <p class="text-sm text-gray-500">
+                        {{ now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
+                        @if($this->esSecundaria && $corteMateria)
+                            @php $mActual = collect($this->materias)->firstWhere('id', $corteMateria); @endphp
+                            @if($mActual)
+                                &mdash; <span class="font-semibold text-indigo-600">{{ $mActual['nombre'] }}</span>
+                            @endif
+                        @endif
+                    </p>
                 </div>
 
                 <div class="flex items-center gap-2 flex-wrap">
@@ -185,6 +219,7 @@
                 </div>
             @endif
         </div>
+        @endif
 
         {{-- ── TABLA HISTORIAL DE CORTES ── --}}
         <div class="mt-6">
@@ -196,14 +231,13 @@
             @if($this->historialCortes->isEmpty())
                 <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 py-10 text-center">
                     <x-heroicon-o-clipboard-document-list class="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                    <p class="text-gray-400 text-sm">Aún no hay cortes registrados.<br>Usa el botón <strong>Corte</strong> para guardar el primer registro.</p>
+                    <p class="text-gray-400 text-sm">Aún no hay cortes registrados.<br>Usa el botón <strong>Marcar Entrada</strong> para guardar el primer registro.</p>
                 </div>
             @else
                 <div class="flex flex-col gap-3">
                     @foreach($this->historialCortes as $corte)
                         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
 
-                            {{-- Cabecera del corte --}}
                             <button wire:click="toggleCorte({{ $corte->id }})"
                                     class="w-full px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition text-left">
 
@@ -214,7 +248,7 @@
                                         <x-heroicon-o-arrow-left-circle class="w-5 h-5 text-blue-500 flex-shrink-0" />
                                     @endif
                                     <div>
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center gap-2 flex-wrap">
                                             <p class="text-sm font-semibold text-gray-900 dark:text-white">
                                                 {{ $corte->fecha->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY') }}
                                             </p>
@@ -222,6 +256,11 @@
                                                 {{ $corte->tipo === 'entrada' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700' }}">
                                                 {{ $corte->tipo === 'entrada' ? 'Entrada' : 'Salida' }}
                                             </span>
+                                            @if($corte->materia)
+                                                <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-100 text-indigo-700">
+                                                    {{ $corte->materia->nombre }}
+                                                </span>
+                                            @endif
                                         </div>
                                         <p class="text-xs text-gray-400">Registrado a las {{ substr($corte->hora_corte, 0, 5) }}</p>
                                     </div>
@@ -250,7 +289,6 @@
                                 </div>
                             </button>
 
-                            {{-- Detalle expandible --}}
                             @if($corteExpandidoId === $corte->id)
                                 <div class="border-t border-gray-100 dark:border-gray-700 overflow-x-auto">
                                     @if(empty($this->detallesCorteExpandido))
@@ -317,7 +355,7 @@
             <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                 <div>
                     <h3 class="text-base font-semibold text-gray-900 dark:text-white">Registro de Asistencia</h3>
-                    <p class="text-sm text-gray-400">Basado en los cortes de entrada registrados</p>
+                    <p class="text-sm text-gray-400">Basado en los cortes de entrada (sin filtro de materia)</p>
                 </div>
                 <span class="text-sm text-gray-400">{{ count($matriz['fechas']) }} día(s) registrado(s)</span>
             </div>
@@ -333,11 +371,9 @@
                     <table class="text-sm w-full">
                         <thead>
                             <tr class="bg-gray-50 dark:bg-gray-900/50">
-                                {{-- Columna fija: nombre --}}
                                 <th class="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider font-semibold sticky left-0 bg-gray-50 dark:bg-gray-900/50 z-10 min-w-52">
                                     Nombre del Estudiante
                                 </th>
-                                {{-- Columnas de fechas --}}
                                 @foreach($matriz['fechas'] as $fecha)
                                     <th class="px-3 py-3 text-center text-xs text-gray-500 uppercase tracking-wider font-semibold min-w-24">
                                         <span class="block text-gray-400 font-normal normal-case">{{ $fecha['dia'] }}</span>
@@ -349,7 +385,6 @@
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             @foreach($matriz['alumnos'] as $fila)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition">
-                                    {{-- Nombre --}}
                                     <td class="px-6 py-3 sticky left-0 bg-white dark:bg-gray-800 z-10">
                                         <div class="flex items-center gap-2">
                                             @if($fila['foto'])
@@ -363,27 +398,22 @@
                                             <span class="font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ $fila['nombre'] }}</span>
                                         </div>
                                     </td>
-                                    {{-- Días --}}
                                     @foreach($fila['dias'] as $estado)
                                         <td class="px-3 py-3 text-center">
                                             @if($estado === 'presente')
-                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100"
-                                                      title="Presente">
+                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100" title="Presente">
                                                     <x-heroicon-s-check class="w-4 h-4 text-green-600" />
                                                 </span>
                                             @elseif($estado === 'tardanza')
-                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-100"
-                                                      title="Tardanza">
+                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-100" title="Tardanza">
                                                     <x-heroicon-s-clock class="w-4 h-4 text-amber-600" />
                                                 </span>
                                             @elseif($estado === 'justificado')
-                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100"
-                                                      title="Falta justificada">
+                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100" title="Falta justificada">
                                                     <x-heroicon-s-document-check class="w-4 h-4 text-blue-600" />
                                                 </span>
                                             @elseif($estado === 'ausente')
-                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100"
-                                                      title="Ausente">
+                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100" title="Ausente">
                                                     <x-heroicon-s-x-mark class="w-4 h-4 text-red-600" />
                                                 </span>
                                             @else
@@ -397,7 +427,6 @@
                     </table>
                 </div>
 
-                {{-- Leyenda --}}
                 <div class="px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex items-center gap-4 flex-wrap">
                     <span class="text-xs text-gray-400 font-medium">Leyenda:</span>
                     <span class="inline-flex items-center gap-1 text-xs text-gray-600">
@@ -413,10 +442,103 @@
                         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100"><x-heroicon-s-document-check class="w-3 h-3 text-blue-600" /></span> Justificado
                     </span>
                     <span class="ml-auto text-xs text-gray-400 italic">
-                        Para modificar un estado, ve a <strong>Pase de Lista → Historial de Cortes → Editar</strong>
+                        Para modificar un estado, ve a <strong>Pase de Lista → Historial → Editar</strong>
                     </span>
                 </div>
             @endif
+        </div>
+
+    {{-- ========================= TAB: DOCENTES ========================= --}}
+    @elseif($tab === 'docentes')
+
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Docentes de la Clase</h3>
+                <p class="text-sm text-gray-400">Cobertura curricular — Plan SEP 2022</p>
+            </div>
+            <button wire:click="mountAction('asignarDocente')"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition"
+                    style="background-color: #00004E;"
+                    onmouseover="this.style.opacity='0.85'"
+                    onmouseout="this.style.opacity='1'">
+                <x-heroicon-o-user-plus class="w-4 h-4" />
+                + Asignar Docente
+            </button>
+        </div>
+
+        {{-- Chips de docentes asignados --}}
+        @php $docentesAsignados = $this->clase->docentes; @endphp
+        @if($docentesAsignados->isEmpty())
+            <div class="mb-5 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl text-sm text-amber-700 dark:text-amber-300">
+                Aún no hay docentes asignados a esta clase. Usa el botón <strong>+ Asignar Docente</strong> para agregar al primer maestro.
+            </div>
+        @else
+            <div class="mb-5 flex flex-wrap gap-2">
+                @foreach($docentesAsignados as $docente)
+                    <div class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm text-sm">
+                        @if($docente->foto)
+                            <span style="width:1.5rem;height:1.5rem;border-radius:50%;overflow:hidden;flex-shrink:0;display:inline-flex;">
+                                <img src="{{ asset('storage/' . $docente->foto) }}"
+                                     style="width:100%;height:100%;object-fit:cover;" />
+                            </span>
+                        @else
+                            <div class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-gray-500 flex-shrink-0">
+                                {{ strtoupper(substr($docente->nombre, 0, 1)) }}
+                            </div>
+                        @endif
+                        <span class="font-medium text-gray-900 dark:text-white">{{ $docente->nombre }} {{ $docente->apellidos }}</span>
+                        @if($docente->pivot->es_titular)
+                            <span class="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 rounded-full font-semibold">Titular</span>
+                        @endif
+                        <button wire:click="mountAction('removerDocente', @js(['docente_id' => $docente->id]))"
+                                class="text-gray-400 hover:text-red-500 transition ml-0.5"
+                                title="Remover de esta clase">
+                            <x-heroicon-o-x-mark class="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        {{-- Cobertura por campo formativo --}}
+        @php $cobertura = $this->coberturaMaterias; @endphp
+        <div class="flex flex-col gap-4">
+            @foreach($cobertura as $campoFormativo => $materiasCampo)
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-5 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-[#00004E] dark:bg-indigo-400"></div>
+                        <h4 class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest">{{ $campoFormativo }}</h4>
+                    </div>
+                    <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                        @foreach($materiasCampo as $materia)
+                            <div class="px-5 py-3.5 flex items-center gap-4">
+                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200 w-40 flex-shrink-0">{{ $materia['nombre'] }}</span>
+                                <div class="flex-1 flex items-center gap-2 flex-wrap">
+                                    @if(empty($materia['docentes']))
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500">
+                                            <x-heroicon-o-user class="w-3 h-3" />
+                                            Sin asignar
+                                        </span>
+                                    @else
+                                        @foreach($materia['docentes'] as $d)
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full font-medium
+                                                {{ $d['es_titular']
+                                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' }}">
+                                                <x-heroicon-s-user-circle class="w-3 h-3" />
+                                                {{ $d['nombre'] }}
+                                                @if($d['es_titular'])
+                                                    <span class="opacity-60 text-xs">· Titular</span>
+                                                @endif
+                                            </span>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endforeach
         </div>
 
     {{-- ========================= TABS ACADÉMICOS ========================= --}}
@@ -430,14 +552,13 @@
                 'extra'         => 'Extra',
             ];
             $labelActual = $tipoLabels[$tab] ?? 'Actividad';
-            $esPrimaria = $this->clase->nivel === 'Primaria';
         @endphp
 
         {{-- Barra de herramientas --}}
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
 
-            {{-- Filtro de materia (solo Primaria) --}}
-            @if($esPrimaria && count($this->materias) > 0)
+            {{-- Filtro de materia --}}
+            @if(count($this->materias) > 0)
                 <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-sm text-gray-500 font-medium">Materia:</span>
                     <button wire:click="filtrarMateria(null)"
@@ -484,7 +605,6 @@
                 @foreach($this->actividades as $actividad)
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
 
-                        {{-- Cabecera de la actividad --}}
                         <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
                             <div class="flex-1">
                                 <div class="flex items-center gap-2 flex-wrap">
@@ -509,7 +629,6 @@
                             </div>
 
                             <div class="flex items-center gap-2 flex-shrink-0">
-                                {{-- Botón ver calificaciones --}}
                                 <button wire:click="toggleActividad({{ $actividad->id }})"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border transition
                                             {{ $actividadAbiertaId === $actividad->id
@@ -519,7 +638,6 @@
                                     {{ $actividadAbiertaId === $actividad->id ? 'Ocultar' : 'Calificaciones' }}
                                 </button>
 
-                                {{-- Botón eliminar --}}
                                 <button wire:click="mountAction('eliminarActividad', @js(['actividad_id' => $actividad->id]))"
                                         class="inline-flex items-center p-1.5 text-gray-400 hover:text-red-500 rounded-lg transition">
                                     <x-heroicon-o-trash class="w-4 h-4" />
@@ -527,7 +645,6 @@
                             </div>
                         </div>
 
-                        {{-- Tabla de calificaciones (expandible) --}}
                         @if($actividadAbiertaId === $actividad->id)
                             <div class="border-t border-gray-100 dark:border-gray-700 overflow-x-auto">
                                 @if(empty($this->calificacionesAbiertas))

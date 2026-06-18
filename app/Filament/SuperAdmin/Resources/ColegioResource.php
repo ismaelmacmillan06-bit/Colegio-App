@@ -8,6 +8,7 @@ use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -108,6 +109,49 @@ class ColegioResource extends Resource
                         ->label('Activo')
                         ->default(true)
                         ->columnSpanFull(),
+                ]),
+
+            Section::make('Colegiaturas por Nivel')
+                ->description('Configura la colegiatura mensual/bimestral/semestral para cada nivel educativo que imparte el colegio.')
+                ->schema([
+                    Repeater::make('nivelColegiaturas')
+                        ->relationship('nivelColegiaturas')
+                        ->label('')
+                        ->schema([
+                            Select::make('nivel')
+                                ->label('Nivel')
+                                ->options([
+                                    'Maternal'     => 'Maternal',
+                                    'Preescolar'   => 'Preescolar',
+                                    'Primaria'     => 'Primaria',
+                                    'Secundaria'   => 'Secundaria',
+                                    'Bachillerato' => 'Bachillerato',
+                                    'Licenciatura' => 'Licenciatura',
+                                ])
+                                ->required()
+                                ->native(false),
+
+                            TextInput::make('monto')
+                                ->label('Colegiatura ($)')
+                                ->numeric()
+                                ->prefix('$')
+                                ->required()
+                                ->minValue(0),
+
+                            Select::make('tipo_cobro')
+                                ->label('Tipo de cobro')
+                                ->options([
+                                    'Mensual'    => 'Mensual',
+                                    'Bimestral'  => 'Bimestral',
+                                    'Semestral'  => 'Semestral',
+                                ])
+                                ->required()
+                                ->native(false),
+                        ])
+                        ->columns(3)
+                        ->addActionLabel('+ Agregar nivel')
+                        ->reorderable(false)
+                        ->collapsible(false),
                 ]),
 
             Section::make('Notas Internas')

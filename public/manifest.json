@@ -1,0 +1,27 @@
+{
+    "name": "SchoolCore",
+    "short_name": "SchoolCore",
+    "description": "Sistema de gestión escolar · Asistencia y control académico",
+    "start_url": "/admin",
+    "scope": "/admin",
+    "display": "standalone",
+    "background_color": "#f0f4f9",
+    "theme_color": "#1e1b6e",
+    "orientation": "any",
+    "lang": "es-MX",
+    "icons": [
+        {
+            "src": "/images/logoimasf.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/images/logoimasf.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["education", "productivity"]
+}
