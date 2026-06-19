@@ -33,9 +33,9 @@ class ImportacionController extends Controller
         ],
         'docentes' => [
             'nombre'     => 'plantilla_docentes.xlsx',
-            'encabezado' => ['nombre', 'apellidos', 'tipo', 'telefono', 'materias'],
-            'ejemplo'    => ['Ana', 'González López', 'titular', '5598765432', 'Español, Matemáticas'],
-            'anchos'     => [18, 22, 16, 15, 35],
+            'encabezado' => ['nombre', 'apellidos', 'tipo', 'telefono', 'materias', 'email', 'password'],
+            'ejemplo'    => ['Ana', 'González López', 'titular', '5598765432', 'Español, Matemáticas', 'ana.gonzalez@colegio.edu', 'contraseña123'],
+            'anchos'     => [18, 22, 16, 15, 35, 30, 20],
         ],
     ];
 

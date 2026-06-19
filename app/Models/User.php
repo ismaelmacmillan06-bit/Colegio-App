@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -27,6 +26,11 @@ class User extends Authenticatable
     public function colegio()
     {
         return $this->belongsTo(Colegio::class);
+    }
+
+    public function docente()
+    {
+        return $this->hasOne(Docente::class);
     }
 
     public function isSuperAdmin(): bool

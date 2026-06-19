@@ -7,6 +7,7 @@ use App\Models\Docente;
 use App\Models\Materia;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
@@ -86,6 +87,26 @@ class DocenteResource extends Resource
             Toggle::make('activo')
                 ->label('Activo')
                 ->default(true),
+
+            Section::make('Acceso al Portal Docente')
+                ->description('Correo y contraseña para que el docente inicie sesión en /docente')
+                ->collapsed()
+                ->schema([
+                    TextInput::make('email')
+                        ->label('Correo electrónico')
+                        ->email()
+                        ->maxLength(255)
+                        ->unique('users', 'email', ignoreRecord: false),
+
+                    TextInput::make('password')
+                        ->label('Contraseña')
+                        ->password()
+                        ->revealable()
+                        ->minLength(8)
+                        ->maxLength(255)
+                        ->helperText('Dejar vacío para no cambiar la contraseña (solo en edición)'),
+                ])
+                ->columnSpanFull(),
         ]);
     }
 

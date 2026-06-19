@@ -16,7 +16,7 @@
 
 /* ── Sidebar wrapper ── */
 .fi-sidebar {
-    background: linear-gradient(175deg, #1a1854 0%, #0f0e38 100%) !important;
+    background: linear-gradient(160deg, #064e3b 0%, #022c22 100%) !important;
     border-right: none !important;
     box-shadow: 4px 0 32px rgba(0,0,0,0.25) !important;
 }
@@ -55,15 +55,15 @@
 }
 
 .fi-sidebar-item-btn:hover {
-    background-color: rgba(255,255,255,0.09) !important;
+    background-color: rgba(16,185,129,0.15) !important;
     color: white !important;
 }
 
 /* Active state: fi-active is on <li>, NOT on <a> */
 .fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
-    background-color: rgba(255,255,255,0.14) !important;
+    background-color: rgba(16,185,129,0.22) !important;
     color: white !important;
-    box-shadow: inset 3px 0 0 rgba(255,255,255,0.65) !important;
+    box-shadow: inset 3px 0 0 #34d399 !important;
 }
 
 /* Icons */
@@ -135,11 +135,30 @@
 
 /* ── Topbar ── */
 .fi-topbar,
-.fi-topbar nav {
-    background-color: white !important;
-    border-bottom: 1px solid #e8edf4 !important;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.05) !important;
+.fi-topbar nav,
+nav.fi-topbar {
+    background: linear-gradient(90deg, #047857 0%, #059669 100%) !important;
+    border-bottom: none !important;
+    box-shadow: 0 2px 12px rgba(4,120,87,0.30) !important;
 }
+/* Todo el texto e iconos del topbar en blanco */
+.fi-topbar a,
+.fi-topbar span,
+.fi-topbar p,
+.fi-topbar button,
+.fi-topbar svg,
+.fi-topbar .fi-icon-btn,
+.fi-topbar .fi-breadcrumbs,
+.fi-topbar .fi-breadcrumbs * { color: rgba(255,255,255,0.88) !important; }
+.fi-topbar a:hover,
+.fi-topbar button:hover,
+.fi-topbar .fi-icon-btn:hover { color: #ffffff !important; background: rgba(255,255,255,0.12) !important; border-radius: 8px !important; }
+/* Breadcrumbs: ítems previos más tenues, último blanco */
+.fi-topbar .fi-breadcrumbs li:not(:last-child) > *  { color: rgba(255,255,255,0.55) !important; }
+.fi-topbar .fi-breadcrumbs li:last-child > *        { color: #ffffff !important; font-weight: 600 !important; }
+/* Dropdown del user-menu restaura colores normales */
+.fi-topbar .fi-dropdown-panel,
+.fi-topbar .fi-dropdown-panel * { color: #0f172a !important; }
 
 /* ── Main content ── */
 .fi-main,
@@ -176,7 +195,7 @@
 /* ── Sidebar collapse toggle ── */
 .fi-sidebar-toggle-button,
 .fi-layout-sidebar-toggle-btn {
-    color: rgba(255,255,255,0.5) !important;
+    color: rgba(255,255,255,0.85) !important;
 }
 
 /* ── Sidebar close overlay ── */
@@ -184,9 +203,9 @@
     color: rgba(255,255,255,0.5) !important;
 }
 
-/* ── Login page override ── */
+/* ── Login page override (detailed in AdminPanelProvider inline CSS) ── */
 .fi-simple-layout {
-    background: #f0f4f9 !important;
+    min-height: 100vh !important;
 }
 
 /* ── PWA standalone ── */

@@ -12,13 +12,14 @@ class Docente extends Model
     protected $table = 'docentes';
 
     protected $fillable = [
-        'colegio_id', 'clase_id', 'tipo', 'nombre', 'apellidos',
+        'colegio_id', 'user_id', 'clase_id', 'tipo', 'nombre', 'apellidos',
         'materia', 'foto', 'telefono', 'nfc_uid', 'activo',
     ];
 
     protected $casts = ['activo' => 'boolean'];
 
     public function colegio()    { return $this->belongsTo(Colegio::class); }
+    public function user()       { return $this->belongsTo(User::class); }
     public function asistencias(){ return $this->hasMany(AsistenciaDocente::class); }
 
     public function clases()

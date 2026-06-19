@@ -28,12 +28,12 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(\App\Filament\Pages\Auth\Login::class)
             ->colors([
-                'primary' => Color::hex('#4F46E5'),
+                'primary' => Color::Emerald,
             ])
             ->font('Inter', url: 'https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap')
-            ->brandName('SchoolCore')
+            ->brandName('SchoolCoreApp')
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
@@ -53,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
                 fn (): HtmlString => new HtmlString(
                     Blade::render('@vite(["resources/css/app.css"])') .
                     '<link rel="manifest" href="/manifest.json">' .
-                    '<meta name="theme-color" content="#1a1854">' .
+                    '<meta name="theme-color" content="#064e3b">' .
                     '<meta name="mobile-web-app-capable" content="yes">' .
                     '<meta name="apple-mobile-web-app-capable" content="yes">'
                 )
@@ -86,16 +86,15 @@ class AdminPanelProvider extends PanelProvider
         return <<<'CSS'
 <style>
 /* ═══════════════════════════════════
-   SchoolCore — Critical Theme CSS
+   SchoolCore — Critical Theme CSS (Emerald)
    Inline: no Vite dependency
    ═══════════════════════════════════ */
 
-/* Inter font */
 :root { --font-family: 'Inter', ui-sans-serif, system-ui, sans-serif !important; }
 
 /* ── Sidebar ── */
 .fi-sidebar {
-    background: linear-gradient(160deg, #1a1854 0%, #0d0c35 100%) !important;
+    background: linear-gradient(160deg, #064e3b 0%, #022c22 100%) !important;
     border-right: none !important;
     box-shadow: 2px 0 20px rgba(0,0,0,0.3) !important;
 }
@@ -109,7 +108,6 @@ class AdminPanelProvider extends PanelProvider
 .fi-sidebar-header a *,
 .fi-sidebar-header span { color: white !important; fill: white !important; }
 
-/* Nav scroll */
 .fi-sidebar-nav { padding: 1.25rem 0.5rem !important; }
 .fi-sidebar-nav::-webkit-scrollbar { width: 3px; }
 .fi-sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
@@ -131,7 +129,7 @@ class AdminPanelProvider extends PanelProvider
 .fi-sidebar-group-collapse-btn svg,
 .fi-icon-btn svg { color: rgba(255,255,255,0.25) !important; width: 12px !important; height: 12px !important; }
 
-/* ── Nav items — fi-sidebar-item-btn (NOT fi-sidebar-item-button) ── */
+/* ── Nav items ── */
 .fi-sidebar-item-btn {
     display: flex !important;
     align-items: center !important;
@@ -149,81 +147,175 @@ class AdminPanelProvider extends PanelProvider
     background-color: transparent !important;
 }
 .fi-sidebar-item-btn:hover {
-    background-color: rgba(255,255,255,0.09) !important;
+    background-color: rgba(16,185,129,0.15) !important;
     color: rgba(255,255,255,0.95) !important;
 }
-/* Active: fi-active is on <li>, item-btn is child */
 .fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
-    background-color: rgba(255,255,255,0.13) !important;
+    background-color: rgba(16,185,129,0.22) !important;
     color: white !important;
-    border-left: 3px solid rgba(255,255,255,0.65) !important;
+    border-left: 3px solid #34d399 !important;
     padding-left: 11px !important;
 }
 
-/* Icons inside nav items */
 .fi-sidebar-item-btn > .fi-icon,
 .fi-sidebar-item-btn .fi-sidebar-item-icon {
-    width: 18px !important;
-    height: 18px !important;
-    flex-shrink: 0 !important;
-    color: rgba(255,255,255,0.45) !important;
-    opacity: 1 !important;
+    width: 18px !important; height: 18px !important;
+    flex-shrink: 0 !important; color: rgba(255,255,255,0.45) !important; opacity: 1 !important;
 }
 .fi-sidebar-item-btn:hover > .fi-icon,
 .fi-sidebar-item-btn:hover .fi-sidebar-item-icon,
 .fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon,
 .fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-icon {
-    color: rgba(255,255,255,0.9) !important;
+    color: #6ee7b7 !important;
 }
 
-/* Item label text */
 .fi-sidebar-item-label {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    color: inherit !important;
-    flex: 1 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
+    font-size: 14px !important; font-weight: 500 !important; color: inherit !important;
+    flex: 1 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important;
 }
 
-/* Remove tree lines — kill grouped border elements */
 .fi-sidebar-item-grouped-border,
 .fi-sidebar-item-grouped-border-part,
 .fi-sidebar-item-grouped-border-part-not-first,
 .fi-sidebar-item-grouped-border-part-not-last { display: none !important; }
 
-/* Sub-items: indent */
 .fi-sidebar-sub-group-items .fi-sidebar-item-btn { padding-left: 36px !important; }
 
 /* ── Topbar ── */
-.fi-topbar nav, .fi-topbar {
-    background-color: #ffffff !important;
-    border-bottom: 1px solid #e8edf4 !important;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06) !important;
+.fi-topbar,
+.fi-topbar > nav,
+nav.fi-topbar {
+    background: linear-gradient(90deg, #047857 0%, #059669 100%) !important;
+    border-bottom: none !important;
+    box-shadow: 0 2px 12px rgba(4,120,87,0.35) !important;
 }
+/* Todo el texto e iconos del topbar en blanco */
+.fi-topbar *:not(.fi-dropdown-panel):not(.fi-dropdown-panel *) {
+    color: rgba(255,255,255,0.90) !important;
+}
+.fi-topbar a:hover,
+.fi-topbar button:hover { color: #ffffff !important; }
+.fi-topbar .fi-icon-btn:hover,
+.fi-topbar button:hover { background: rgba(255,255,255,0.12) !important; border-radius: 8px !important; }
+/* Breadcrumbs: ítems anteriores más tenues, último completo */
+.fi-topbar .fi-breadcrumbs li:not(:last-child) a,
+.fi-topbar .fi-breadcrumbs li:not(:last-child) span { color: rgba(255,255,255,0.60) !important; }
+.fi-topbar .fi-breadcrumbs li:last-child span,
+.fi-topbar .fi-breadcrumbs li:last-child a { color: #ffffff !important; font-weight: 600 !important; }
+/* Dropdown del user-menu vuelve a colores normales */
+.fi-topbar .fi-dropdown-panel,
+.fi-topbar .fi-dropdown-panel * { color: #0f172a !important; background-color: revert !important; }
 
 /* ── Main area ── */
 .fi-main, .fi-body { background-color: #f0f4f9 !important; }
 
 /* ── Page heading ── */
-.fi-header-heading {
-    font-weight: 700 !important;
-    font-size: 1.4rem !important;
-    color: #0f172a !important;
-}
+.fi-header-heading { font-weight: 700 !important; font-size: 1.4rem !important; color: #0f172a !important; }
 
 /* ── Cards ── */
-.fi-section {
-    border-radius: 1rem !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.03) !important;
+.fi-section { border-radius: 1rem !important; box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.03) !important; }
+
+/* ── Sidebar toggle ── */
+.fi-layout-sidebar-toggle-btn { color: rgba(255,255,255,0.80) !important; }
+
+/* ══════════════════════════════════════
+   Login page — card flotante sobre fondo verde
+   Los fi-simple-* son pass-throughs; sc-card-wrapper maneja el card
+   ══════════════════════════════════════ */
+.fi-simple-layout {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100vh !important;
+    padding: 2rem !important;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 55%, #6ee7b7 100%) !important;
 }
-
-/* ── Login page ── */
-.fi-simple-layout { background: #f0f4f9 !important; }
-
-/* ── Sidebar toggle button ── */
-.fi-layout-sidebar-toggle-btn { color: rgba(255,255,255,0.5) !important; }
+.fi-simple-main-ctn {
+    width: 100% !important;
+    max-width: 1040px !important;
+    min-height: 0 !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    display: block !important;
+}
+.fi-simple-main {
+    width: 100% !important;
+    max-width: none !important;
+    background: transparent !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    display: block !important;
+}
+.fi-simple-page { width: 100% !important; padding: 0 !important; display: block !important; }
+.fi-simple-page-content { width: 100% !important; display: block !important; padding: 0 !important; }
+/* ── Card ── */
+.sc-card-wrapper {
+    display: flex !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    min-height: 620px !important;
+    border-radius: 24px !important;
+    overflow: hidden !important;
+    box-shadow: 0 30px 70px -30px rgba(13,40,28,.32), 0 4px 12px rgba(0,0,0,0.06) !important;
+}
+/* ── Panel formulario (izquierda) ── */
+.sc-form-side {
+    flex-shrink: 0 !important;
+    width: 440px !important;
+    background: white !important;
+    padding: 3.5rem 3rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+}
+.sc-form-side .fi-section,
+.sc-form-side .fi-schema-section {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+.sc-form-side .fi-section-content,
+.sc-form-side .fi-section-content-ctn { padding: 0 !important; }
+.sc-form-side .fi-section-footer {
+    padding: 0 !important; border-top: none !important; background: transparent !important;
+}
+/* ── Panel marca (derecha) ── */
+.sc-brand-side {
+    flex: 1 1 0 !important;
+    background: linear-gradient(150deg, #16a34a, #15803d 55%, #166534) !important;
+    padding: 3rem 3.5rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+}
+.sc-blob { position: absolute !important; border-radius: 50% !important; filter: blur(2px) !important; pointer-events: none !important; }
+.sc-blob-1 { width:340px !important; height:340px !important; top:-90px !important; right:-70px !important; background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%) !important; }
+.sc-blob-2 { width:260px !important; height:260px !important; bottom:-60px !important; left:-60px !important; background:radial-gradient(circle,rgba(255,255,255,.16),transparent 70%) !important; }
+.sc-brand-lines { position:absolute !important; inset:0 !important; opacity:.06 !important; pointer-events:none !important; background-image:repeating-linear-gradient(180deg,#fff 0 1px,transparent 1px 34px) !important; }
+.sc-brand-inner { position:relative !important; z-index:2 !important; }
+.sc-sprout { width:56px !important; height:56px !important; border-radius:16px !important; display:grid !important; place-items:center !important; background:rgba(255,255,255,.14) !important; border:1px solid rgba(255,255,255,.22) !important; margin-bottom:24px !important; }
+.sc-brand-headline { font-size:28px !important; font-weight:800 !important; letter-spacing:-.6px !important; line-height:1.15 !important; color:white !important; margin:0 0 12px !important; }
+.sc-brand-lede { font-size:14.5px !important; line-height:1.65 !important; color:rgba(255,255,255,.78) !important; margin-bottom:28px !important; }
+.sc-features { display:flex !important; flex-direction:column !important; gap:10px !important; }
+.sc-feat { display:flex !important; align-items:center !important; gap:12px !important; padding:12px 14px !important; border-radius:12px !important; background:rgba(255,255,255,.11) !important; border:1px solid rgba(255,255,255,.16) !important; font-size:13.5px !important; font-weight:500 !important; color:white !important; }
+.sc-feat-icon { width:32px !important; height:32px !important; border-radius:9px !important; flex:none !important; display:grid !important; place-items:center !important; background:rgba(255,255,255,.15) !important; }
+/* ── Responsive ── */
+@media (max-width: 860px) {
+    .fi-simple-layout { padding: 0 !important; background: #f0fdf4 !important; align-items: flex-start !important; }
+    .fi-simple-main-ctn { max-width: none !important; }
+    .sc-card-wrapper { flex-direction: column !important; border-radius: 0 !important; min-height: 0 !important; }
+    .sc-brand-side { padding: 2rem 1.5rem !important; min-height: 190px !important; }
+    .sc-form-side { width: 100% !important; padding: 2rem 1.5rem !important; }
+    .sc-brand-headline { font-size: 22px !important; }
+    .sc-features { display: none !important; }
+}
 </style>
 CSS;
     }
